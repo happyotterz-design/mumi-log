@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>머미 로그</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3efe6; --surface:#fffdf8; --surface2:#f7f3ea;
+  --line:#ded5c2; --line2:#cabfa8;
+  --text:#221d18; --text2:#6d6256; --text3:#948875;
+  --accent:#a32b33; --accent-soft:#a32b3318;
+  --gold:#b07d1a; --teal:#2f6d6d;
+  --shadow:0 1px 2px rgba(40,30,15,.06),0 8px 24px rgba(40,30,15,.07);
+  --radius:14px;
+}
+:root[data-theme="dark"]{
+  --bg:#131318; --surface:#1b1b22; --surface2:#20202a;
+  --line:#2e2e3a; --line2:#3d3d4d;
+  --text:#ece7de; --text2:#a09baa; --text3:#787488;
+  --accent:#e2626a; --accent-soft:#e2626a1f;
+  --gold:#d9a441; --teal:#6fc0bd;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);
+  font-family:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.serif{font-family:"Gowun Batang","Nanum Myeongjo",Batang,serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 80px}
+
+header{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.brand h1{font-family:"Gowun Batang",serif;font-size:30px;font-weight:700;margin:0;letter-spacing:-.01em}
+.brand h1 .dot{color:var(--accent)}
+.brand p{margin:2px 0 0;color:var(--text3);font-size:12.5px}
+.head-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+button{font-family:inherit;font-size:14px;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+  background:var(--surface);color:var(--text);padding:8px 13px;transition:.15s}
+button:hover{border-color:var(--line2)}
+button:disabled{opacity:.5;cursor:progress}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent;border-color:transparent;color:var(--text2);padding:6px 9px}
+button.ghost:hover{background:var(--surface2);color:var(--text)}
+button.icon{padding:8px 10px;line-height:1}
+.who{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px}
+.who b{color:var(--text);font-weight:500}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tab{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 14px;
+  color:var(--text3);font-size:14.5px;white-space:nowrap}
+.tab:hover{color:var(--text2)}
+.tab.on{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.tab .n{font-size:11.5px;color:var(--text3);margin-left:4px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.stat .k{font-size:11px;color:var(--text3);letter-spacing:.04em}
+.stat .v{font-family:"Gowun Batang",serif;font-size:22px;font-weight:700;line-height:1.3}
+.stat .v small{font-size:12px;font-weight:400;color:var(--text3);font-family:inherit}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+input[type=text],input[type=number],select,textarea{font-family:inherit;font-size:14px;color:var(--text);
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 11px;outline:none;transition:.15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;min-height:70px;line-height:1.55}
+.search{flex:1 1 200px;min-width:150px;position:relative}
+.search input{padding-left:32px}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.45}
+select{width:auto;padding-right:28px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text2)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.list{display:flex;flex-direction:column;gap:9px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
+  display:flex;gap:14px;align-items:center;cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
+.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card .main{flex:1;min-width:0}
+.thumb{width:62px;height:62px;border-radius:10px;object-fit:cover;flex-shrink:0;
+  background:var(--surface2);border:1px solid var(--line)}
+.cover{display:block;margin:0 auto 14px;max-width:100%;max-height:320px;width:auto;height:auto;
+  object-fit:contain;border-radius:12px}
+.imgbox{display:flex;gap:12px;align-items:center}
+.imgbox img{width:86px;height:86px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:var(--surface2)}
+.imgbox .side{flex:1}
+.ttl{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.ttl h3{font-family:"Gowun Batang",serif;font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em}
+.badge{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--text3);white-space:nowrap}
+.badge.own{color:var(--teal);border-color:var(--teal)}
+.badge.toplay{color:var(--gold);border-color:var(--gold)}
+.badge.tobuy{color:var(--accent);border-color:var(--accent)}
+.badge.lent{color:#fff;background:var(--accent);border-color:var(--accent)}
+.meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text2);font-size:12.5px;margin-top:4px}
+.ext{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;color:var(--text3)}
+.ext b{font-weight:500;color:var(--text2)}
+.tags{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.tag{font-size:11px;color:var(--text3);background:var(--surface2);border-radius:6px;padding:2px 7px}
+.oneline{margin-top:7px;font-size:13px;color:var(--text2);font-style:italic;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.oneline b{font-style:normal;color:var(--text3);font-weight:400;font-size:12px}
+.score{text-align:right;flex-shrink:0;min-width:74px}
+.score .num{font-family:"Gowun Batang",serif;font-size:24px;font-weight:700;line-height:1}
+.score .num.none{font-size:14px;color:var(--text3);font-weight:400}
+.score .cnt{font-size:11px;color:var(--text3);margin-top:3px}
+.gap{font-size:11px;margin-top:3px}
+.gap.up{color:var(--teal)}.gap.down{color:var(--accent)}
+
+.stars{position:relative;display:inline-block;white-space:nowrap;line-height:1;letter-spacing:1px}
+.stars .bg{color:var(--line2)}
+.stars .fg{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold);width:var(--pct,0%)}
+.stars.sm{font-size:12px}.stars.md{font-size:15px}.stars.lg{font-size:26px}
+.starin{position:relative;display:inline-flex;font-size:30px;line-height:1;letter-spacing:2px;cursor:pointer;user-select:none}
+.starin .hits{position:absolute;inset:0;display:flex}
+.starin .hits i{flex:1}
+.starin.dim .fg{opacity:.55}
+
+.empty{text-align:center;padding:56px 20px;color:var(--text3)}
+.empty .big{font-size:34px;margin-bottom:10px;opacity:.5}
+
+.overlay{position:fixed;inset:0;background:rgba(15,12,10,.55);
+  display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow-y:auto;z-index:50}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:620px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal .head{padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.modal .head h2{font-family:"Gowun Batang",serif;font-size:22px;margin:0;flex:1;line-height:1.35}
+.modal .body{padding:18px 20px 22px}
+.modal .foot{padding:0 20px 20px;display:flex;gap:8px;justify-content:flex-end}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
+.row{display:flex;gap:9px}
+.row>*{flex:1}
+.hint{font-size:11.5px;color:var(--text3);margin-top:4px}
+.sectitle{font-size:12px;color:var(--text3);letter-spacing:.06em;margin:22px 0 10px;display:flex;align-items:center;gap:9px}
+.sectitle::after{content:"";flex:1;height:1px;background:var(--line)}
+.infobar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 14px;background:var(--surface2);
+  border-radius:12px;font-size:13px;color:var(--text2)}
+.infobar .big{font-family:"Gowun Batang",serif;font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.cmp{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.cmp div{flex:1;min-width:110px;background:var(--surface2);border-radius:10px;padding:9px 12px;text-align:center}
+.cmp .lb{font-size:10.5px;color:var(--text3)}
+.cmp .vl{font-family:"Gowun Batang",serif;font-size:19px;font-weight:700}
+.cmp a{color:var(--accent);font-size:11px;text-decoration:none}
+.rv{padding:13px 0;border-bottom:1px dashed var(--line)}
+.rv:last-child{border-bottom:none}
+.rv .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rv .nick{font-size:13px;font-weight:500}
+.rv .act{margin-left:auto;font-size:11.5px;color:var(--text3);display:flex;gap:7px;align-items:center}
+@keyframes flashbg{0%{background:var(--accent-soft)}100%{background:transparent}}
+.flash{animation:flashbg 1.4s ease-out;border-radius:8px}
+.rv .act a{color:var(--accent);text-decoration:none;cursor:pointer;
+  border:1px solid var(--line);border-radius:7px;padding:2px 7px}
+.rv .act a:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.rv .txt{margin-top:6px;font-size:14px;line-height:1.65;white-space:pre-wrap}
+.spo{margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--surface2);border:1px dashed var(--line2);border-radius:10px;
+  padding:10px 12px;font-size:12.5px;color:var(--text3)}
+.spo button{font-size:12.5px;padding:5px 11px;margin-left:auto}
+.chkline{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--text2);cursor:pointer;padding:6px 0}
+.chkline input{width:auto}
+.foot-note{text-align:center;color:var(--text3);font-size:11.5px;margin-top:36px;line-height:1.9}
+
+/* 사람들 탭 */
+.ppl{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:6px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
+.pcard .nm{font-family:"Gowun Batang",serif;font-size:17px;font-weight:700;margin-bottom:2px}
+.pcard .big{font-family:"Gowun Batang",serif;font-size:22px;font-weight:700;line-height:1.2}
+.pcard .sub{font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.7}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:14px;box-shadow:var(--shadow)}
+.panel h4{font-family:"Gowun Batang",serif;font-size:16px;margin:0 0 12px}
+.vs{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.vs select{flex:1 1 120px}
+.vs .x{color:var(--text3);font-size:13px}
+.matchbar{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.matchbar .pct{font-family:"Gowun Batang",serif;font-size:30px;font-weight:700;color:var(--accent)}
+.matchbar .lb{font-size:12px;color:var(--text3)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;color:var(--text3);font-weight:400;text-align:center;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:7px 8px;border-bottom:1px dashed var(--line);text-align:center}
+.tbl td.t{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl .hi{color:var(--gold);font-weight:700}
+.tbl .lo{color:var(--text3)}
+.tbl .d0{color:var(--teal)}
+.tbl .d2{color:var(--accent);font-weight:700}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.foot-note a{color:var(--text3);cursor:pointer}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);
+  padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.on{opacity:1}
+@media (max-width:620px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .brand h1{font-size:25px}
+  .score{min-width:62px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1 class="serif">머미 로그<span class="dot">.</span></h1>
+      <p>우리가 플레이한 머더미스터리 기록장</p>
+    </div>
+    <div class="head-actions">
+      <div class="who"><span>나는</span><b id="whoName">이름없음</b>
+        <button class="ghost icon" id="btnWho" title="내 이름 바꾸기">✎</button></div>
+      <button class="icon" id="btnRefresh" title="새로고침">⟳</button>
+      <button class="icon" id="btnTheme" title="밝기 전환">◐</button>
+      <button class="primary" id="btnAdd">+ 작품 추가</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="log">작품 목록<span class="n" id="nLog"></span></button>
+    <button class="tab" data-tab="own">보유 작품<span class="n" id="nOwn"></span></button>
+    <button class="tab" data-tab="toplay">해보고 싶다<span class="n" id="nToplay"></span></button>
+    <button class="tab" data-tab="tobuy">갖고 싶다<span class="n" id="nTobuy"></span></button>
+    <button class="tab" data-tab="people">사람들<span class="n" id="nPeople"></span></button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar" id="toolbar">
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="text" id="q" placeholder="제목 · 태그 검색">
+    </div>
+    <select id="fPlayers">
+      <option value="">인원 전체</option>
+      <option value="2">2명 가능</option><option value="3">3명 가능</option>
+      <option value="4">4명 가능</option><option value="5">5명 가능</option>
+      <option value="6">6명 가능</option><option value="7">7명 가능</option>
+      <option value="8">8명 가능</option><option value="9">9명+ 가능</option>
+    </select>
+    <select id="sortBy">
+      <option value="rating">우리 평점순</option>
+      <option value="recent">최근 등록순</option>
+      <option value="reviews">후기 많은순</option>
+      <option value="ext">외부 평점순</option>
+      <option value="title">가나다순</option>
+      <option value="time">플레이타임 짧은순</option>
+    </select>
+    <div class="chips" id="ownChips" style="display:none"></div>
+  </div>
+
+  <div class="list" id="list"><div class="empty"><div class="big">🕯️</div>불러오는 중…</div></div>
+
+  <p class="foot-note">스포일러는 꼭 체크하고 써주기 🤫<br><span id="syncAt"></span></p>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* Apps Script 웹앱 주소 — GitHub 페이지에서 열 때 여기로 데이터를 주고받음 */
+var API_URL="https://script.google.com/macros/s/AKfycbzwd3aHKjGCGRiB1ROboQ98_JS8hJteB0A3l38psOUGK6E0Kn0Sz9A58JHm7QBMWvFcqw/exec";
+
+var data={games:[],reviews:[]}, loaded=false, busy=false;
+var tab="log", editingReview=null, openGameId=null;
+var filters={q:"",players:"",sort:"rating",owner:""};
+var myName=ls("mumi_nick")||"";
+
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+
+
+/* ---------- server bridge ---------- */
+var inGas=(typeof google!=="undefined"&&google.script&&google.script.run);
+function call(fn,arg){
+  if(inGas){
+    return new Promise(function(res,rej){
+      google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](arg);
+    });
+  }
+  return fetch(API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({fn:fn,arg:arg===undefined?null:arg})
+  }).then(function(r){
+    if(!r.ok) throw new Error("서버 응답 "+r.status);
+    return r.json();
+  }).then(function(j){
+    if(!j||!j.ok) throw new Error((j&&j.error)||"알 수 없는 오류");
+    return j.data;
+  });
+}
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("on");
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("on");},1800);}
+function setBusy(b){busy=b;document.querySelectorAll("button.primary").forEach(function(x){x.disabled=b;});}
+
+function apply(d){
+  data=d||{games:[],reviews:[]}; loaded=true;
+  var t=new Date();
+  $("syncAt").textContent="마지막 동기화 "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2)+" · ⟳ 눌러서 새로고침";
+  renderAll(); if(openGameId) renderModalGame();
+}
+function fail(e){setBusy(false);alert("서버랑 연결이 안 됐어 😢\n"+(e&&e.message?e.message:e));}
+
+function load(){ call("getAll").then(apply).catch(fail); }
+
+/* ---------- utils ---------- */
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function $(id){return document.getElementById(id);}
+function starsHTML(v,size){var pct=Math.max(0,Math.min(5,v||0))/5*100;
+  return '<span class="stars '+(size||"sm")+'" style="--pct:'+pct+'%"><span class="bg">★★★★★</span><span class="fg">★★★★★</span></span>';}
+function fmtTime(m){if(!m)return"";if(m>=60){var h=Math.floor(m/60),r=m%60;return h+"시간"+(r?" "+r+"분":"");}return m+"분";}
+function fmtDate(ts){if(!ts)return"";var d=new Date(ts);return (d.getFullYear()+"").slice(2)+"."+("0"+(d.getMonth()+1)).slice(-2)+"."+("0"+d.getDate()).slice(-2);}
+function rvOf(g){return data.reviews.filter(function(r){return r.gameId===g;});}
+function avgOf(g){var rs=rvOf(g).filter(function(r){return r.rating>0;});if(!rs.length)return 0;
+  return rs.reduce(function(a,b){return a+b.rating;},0)/rs.length;}
+function diffOf(g){var rs=rvOf(g).filter(function(r){return r.difficulty>0;});if(!rs.length)return 0;
+  return rs.reduce(function(a,b){return a+b.difficulty;},0)/rs.length;}
+function diffN(g){return rvOf(g).filter(function(r){return r.difficulty>0;}).length;}
+function gameById(id){return data.games.filter(function(g){return g.id===id;})[0];}
+function pplText(g){if(!g.minP&&!g.maxP)return"";var a=g.minP||g.maxP,b=g.maxP||g.minP;return a===b?a+"명":a+"~"+b+"명";}
+function ownersOf(g){return String(g.owner||"").split(",").map(function(s){return s.trim();}).filter(Boolean);}
+function extAvg(g){var a=[];if(g.extMml)a.push(g.extMml);if(g.extMdms)a.push(g.extMdms);
+  return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:0;}
+
+/* ---------- theme ---------- */
+(function(){var t=ls("mumi_theme");
+ if(!t&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)t="dark";
+ document.documentElement.setAttribute("data-theme",t||"light");
+ $("btnTheme").onclick=function(){
+  var next=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",next);ls("mumi_theme",next);};})();
+
+/* ---------- name ---------- */
+function renderName(){$("whoName").textContent=myName||"이름없음";}
+$("btnWho").onclick=function(){
+  openModal('<div class="head"><h2 class="serif">여기서 내 이름</h2><button class="ghost icon" data-close>✕</button></div>'+
+  '<div class="body"><div class="field"><label>후기에 기본으로 들어갈 이름</label>'+
+  '<input type="text" id="nmIn" list="nickList" value="'+esc(myName)+'" placeholder="본명 (예: 인형)">'+
+  '<datalist id="nickList">'+people().map(function(p){return '<option value="'+esc(p.name)+'">';}).join("")+'</datalist>'+
+  '<div class="hint">후기·보유자 표시에 쓰이는 이름이야.<br>'+
+  '⚠️ <b>사람들 탭의 평점·취향 비교는 이름으로 묶여</b>. 꼭 <b>본명</b>으로, 매번 똑같이 써줘! (인형 / 인형이 처럼 다르게 쓰면 다른 사람이 돼)</div></div></div>'+
+  '<div class="foot"><button data-close>취소</button><button class="primary" id="nmSave">저장</button></div>');
+  $("nmSave").onclick=function(){
+    var v=$("nmIn").value.trim();
+    if(!v){alert("이름을 적어줘! 본명으로 쓰면 사람들 탭에서 비교가 돼 🙂");$("nmIn").focus();return;}
+    myName=v;ls("mumi_nick",myName);renderName();closeModal();};
+  setTimeout(function(){$("nmIn").focus();},60);
+};
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach(function(t){
+  t.onclick=function(){
+    document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on");});
+    t.classList.add("on");tab=t.dataset.tab;
+    $("ownChips").style.display=tab==="own"?"flex":"none";
+    $("toolbar").style.display=tab==="people"?"none":"flex";
+    renderAll();};
+});
+$("btnRefresh").onclick=function(){toast("새로고침 중…");load();};
+
+/* ---------- render ---------- */
+function renderAll(){renderCounts();renderStats();renderOwnChips();renderList();}
+
+function ownerList(){
+  var m={};
+  data.games.forEach(function(g){
+    if(!g.owned)return;
+    ownersOf(g).forEach(function(o){m[o]=(m[o]||0)+1;});
+  });
+  return Object.keys(m).sort(function(a,b){return m[b]-m[a];}).map(function(k){return {name:k,n:m[k]};});
+}
+function renderOwnChips(){
+  var owners=ownerList();
+  var lent=data.games.filter(function(g){return g.owned&&g.lentTo;}).length;
+  if(!owners.length&&!lent){$("ownChips").innerHTML="";return;}
+  $("ownChips").innerHTML='<button class="chip'+(filters.owner?"":" on")+'" data-owner="">전체</button>'+
+    owners.map(function(o){
+      return '<button class="chip'+(filters.owner===o.name?" on":"")+'" data-owner="'+esc(o.name)+'">'+esc(o.name)+' '+o.n+'</button>';
+    }).join("")+
+    (lent?'<button class="chip'+(filters.owner==="__lent"?" on":"")+'" data-owner="__lent">🚚 대여 중 '+lent+'</button>':"");
+  $("ownChips").querySelectorAll("[data-owner]").forEach(function(c){
+    c.onclick=function(){filters.owner=c.dataset.owner;renderOwnChips();renderList();};
+  });
+}
+function tabGames(t){
+  return data.games.filter(function(g){
+    if(t==="log")return true;
+    if(t==="own")return !!g.owned;
+    return g.status===t;});
+}
+function renderCounts(){
+  $("nLog").textContent=tabGames("log").length;
+  $("nOwn").textContent=tabGames("own").length;
+  $("nToplay").textContent=tabGames("toplay").length;
+  $("nTobuy").textContent=tabGames("tobuy").length;
+  $("nPeople").textContent=people().length;
+}
+function renderStats(){
+  var all=data.games;
+  var reviewed=all.filter(function(g){return rvOf(g.id).length;});
+  var rated=reviewed.map(function(g){return avgOf(g.id);}).filter(function(v){return v>0;});
+  var avg=rated.length?rated.reduce(function(a,b){return a+b;},0)/rated.length:0;
+  var owned=tabGames("own");
+  var mins=reviewed.reduce(function(a,g){return a+(g.playtime||0);},0);
+  $("stats").innerHTML=
+  '<div class="stat"><div class="k">작품</div><div class="v">'+all.length+'<small> 개 · 후기 '+data.reviews.length+'</small></div></div>'+
+  '<div class="stat"><div class="k">우리 평균</div><div class="v">'+(avg?avg.toFixed(2):"–")+'<small> / 5</small></div></div>'+
+  '<div class="stat"><div class="k">보유</div><div class="v">'+owned.length+'<small> 개</small></div></div>'+
+  '<div class="stat"><div class="k">쌓은 시간</div><div class="v">'+(mins?Math.round(mins/60):0)+'<small> 시간</small></div></div>';
+}
+/* ---------- 사람들 ---------- */
+var cmpA="", cmpB="";
+
+function people(){
+  var m={};
+  data.reviews.forEach(function(r){
+    var n=String(r.nick||"").trim(); if(!n) return;
+    if(!m[n]) m[n]={name:n,n:0,sum:0,cnt:0,dsum:0,dcnt:0,best:null,worst:null};
+    var p=m[n]; p.n++;
+    if(r.rating>0){
+      p.sum+=r.rating; p.cnt++;
+      if(!p.best||r.rating>p.best.rating) p.best=r;
+      if(!p.worst||r.rating<p.worst.rating) p.worst=r;
+    }
+    if(r.difficulty>0){p.dsum+=r.difficulty;p.dcnt++;}
+  });
+  return Object.keys(m).map(function(k){
+    var p=m[k];
+    p.avg=p.cnt?p.sum/p.cnt:0;
+    p.davg=p.dcnt?p.dsum/p.dcnt:0;
+    return p;
+  }).sort(function(a,b){return b.n-a.n;});
+}
+function ratingsOf(name){
+  var m={};
+  data.reviews.forEach(function(r){
+    if(String(r.nick||"").trim()===name&&r.rating>0) m[r.gameId]=r.rating;
+  });
+  return m;
+}
+function titleOf(id){var g=gameById(id);return g?g.title:"(삭제된 작품)";}
+
+function renderPeople(){
+  var ps=people();
+  $("nPeople").textContent=ps.length;
+  var notice='<div class="panel" style="margin:0 0 14px;padding:12px 14px;font-size:12.5px;color:var(--text2);line-height:1.7">'+
+    '👥 후기는 <b>본명</b>으로! 같은 이름으로 쓴 후기끼리 한 사람으로 묶여서 평점·취향이 비교돼. '+
+    '이름을 다르게 쓰면(인형 / 인형이) 다른 사람으로 잡히니까 매번 똑같이 써줘.</div>';
+
+  if(!ps.length){
+    $("list").innerHTML=notice+'<div class="empty"><div class="big">👥</div>아직 후기가 없어. 후기를 이름 달고 남기면 여기서 서로 비교돼!</div>';
+    return;
+  }
+
+  var html=notice+'<div class="ppl">'+ps.map(function(p){
+    return '<div class="pcard">'+
+      '<div class="nm">'+esc(p.name)+'</div>'+
+      '<div class="big">'+(p.avg?p.avg.toFixed(2):"–")+'<span style="font-size:12px;color:var(--text3);font-weight:400"> / 5</span></div>'+
+      starsHTML(p.avg,"sm")+
+      '<div class="sub">후기 '+p.n+'개'+(p.davg?' · 체감 난이도 평균 '+p.davg.toFixed(1):"")+
+        (p.best?'<br>최고 ★'+p.best.rating.toFixed(1)+' '+esc(titleOf(p.best.gameId)):"")+
+        (p.worst&&p.cnt>1?'<br>최저 ★'+p.worst.rating.toFixed(1)+' '+esc(titleOf(p.worst.gameId)):"")+
+      '</div></div>';
+  }).join("")+'</div>';
+
+  /* --- 1:1 비교 --- */
+  var names=ps.map(function(p){return p.name;});
+  if(names.indexOf(cmpA)<0) cmpA=names[0]||"";
+  if(names.indexOf(cmpB)<0||cmpB===cmpA) cmpB=names.filter(function(n){return n!==cmpA;})[0]||names[0]||"";
+
+  var ra=ratingsOf(cmpA), rb=ratingsOf(cmpB);
+  var common=Object.keys(ra).filter(function(id){return rb[id]!==undefined;});
+  var rows=common.map(function(id){
+    return {id:id,title:titleOf(id),a:ra[id],b:rb[id],d:Math.abs(ra[id]-rb[id])};
+  }).sort(function(x,y){return y.d-x.d;});
+  var avgD=rows.length?rows.reduce(function(s,r){return s+r.d;},0)/rows.length:0;
+  var match=rows.length?Math.max(0,Math.round(100-avgD*25)):0;
+  var bothLove=rows.filter(function(r){return r.a>=4&&r.b>=4;});
+
+  html+='<div class="panel"><h4>둘이 비교하기</h4>'+
+    '<div class="vs"><select id="cmpA">'+names.map(function(n){
+      return '<option'+(n===cmpA?" selected":"")+'>'+esc(n)+'</option>';}).join("")+'</select>'+
+    '<span class="x">vs</span><select id="cmpB">'+names.map(function(n){
+      return '<option'+(n===cmpB?" selected":"")+'>'+esc(n)+'</option>';}).join("")+'</select></div>';
+
+  if(!rows.length){
+    html+='<div style="color:var(--text3);font-size:13px">둘 다 평가한 작품이 아직 없어.</div>';
+  }else{
+    html+='<div class="matchbar"><span class="pct">'+match+'%</span>'+
+      '<span class="lb">취향 궁합 · 같이 평가한 작품 '+rows.length+'개 · 평균 차이 '+avgD.toFixed(2)+'점</span></div>'+
+      (bothLove.length?'<div style="font-size:12.5px;color:var(--text2);margin-bottom:12px">💛 둘 다 좋아한 작품: '+
+        bothLove.map(function(r){return esc(r.title);}).join(", ")+'</div>':"")+
+      '<div class="scrollx"><table class="tbl"><tr><th>작품</th><th>'+esc(cmpA)+'</th><th>'+esc(cmpB)+'</th><th>차이</th></tr>'+
+      rows.map(function(r){
+        var cls=r.d>=2?"d2":(r.d<=0.5?"d0":"");
+        return '<tr><td class="t">'+esc(r.title)+'</td>'+
+          '<td class="'+(r.a>r.b?"hi":"")+'">'+r.a.toFixed(1)+'</td>'+
+          '<td class="'+(r.b>r.a?"hi":"")+'">'+r.b.toFixed(1)+'</td>'+
+          '<td class="'+cls+'">'+(r.d?r.d.toFixed(1):"일치")+'</td></tr>';
+      }).join("")+'</table></div>';
+  }
+  html+='</div>';
+
+  /* --- 전체 표 --- */
+  var rated=data.games.filter(function(g){return rvOf(g.id).length;})
+    .sort(function(a,b){return avgOf(b.id)-avgOf(a.id);});
+  if(rated.length){
+    var all=ps.map(function(p){return {name:p.name,r:ratingsOf(p.name)};});
+    html+='<div class="panel"><h4>한눈에 보기</h4><div class="scrollx"><table class="tbl">'+
+      '<tr><th>작품</th>'+all.map(function(p){return '<th>'+esc(p.name)+'</th>';}).join("")+'<th>평균</th></tr>'+
+      rated.map(function(g){
+        var vals=all.map(function(p){return p.r[g.id];});
+        var mx=Math.max.apply(null,vals.filter(function(v){return v!==undefined;}).concat([0]));
+        return '<tr><td class="t">'+esc(g.title)+'</td>'+
+          vals.map(function(v){
+            return '<td class="'+(v===undefined?"lo":(v===mx?"hi":""))+'">'+(v===undefined?"–":v.toFixed(1))+'</td>';
+          }).join("")+
+          '<td>'+(avgOf(g.id)?avgOf(g.id).toFixed(1):"–")+'</td></tr>';
+      }).join("")+'</table></div></div>';
+  }
+
+  $("list").innerHTML=html;
+  $("cmpA").onchange=function(){cmpA=this.value;renderPeople();};
+  $("cmpB").onchange=function(){cmpB=this.value;renderPeople();};
+}
+
+function renderList(){
+  if(!loaded){$("list").innerHTML='<div class="empty"><div class="big">🕯️</div>불러오는 중…</div>';return;}
+  if(tab==="people"){renderPeople();return;}
+  var out=tabGames(tab).slice();
+  if(tab==="own"&&filters.owner){
+    out=filters.owner==="__lent"
+      ? out.filter(function(g){return !!g.lentTo;})
+      : out.filter(function(g){return ownersOf(g).indexOf(filters.owner)>=0;});
+  }
+  if(filters.players){var n=+filters.players;
+    out=out.filter(function(g){var mn=g.minP||0,mx=g.maxP||99;return n>=9?mx>=9:(mn<=n&&mx>=n);});}
+  if(filters.q){var q=filters.q.toLowerCase();
+    out=out.filter(function(g){
+      return (g.title||"").toLowerCase().indexOf(q)>=0
+          || (g.tags||[]).join(" ").toLowerCase().indexOf(q)>=0
+          || String(g.owner||"").toLowerCase().indexOf(q)>=0;});}
+  out.sort(function(a,b){
+    switch(filters.sort){
+      case "recent":return (b.createdAt||0)-(a.createdAt||0);
+      case "reviews":return rvOf(b.id).length-rvOf(a.id).length;
+      case "ext":return extAvg(b)-extAvg(a);
+      case "title":return (a.title||"").localeCompare(b.title||"","ko");
+      case "time":return (a.playtime||9999)-(b.playtime||9999);
+      default:return avgOf(b.id)-avgOf(a.id)||rvOf(b.id).length-rvOf(a.id).length;}
+  });
+
+  if(!out.length){
+    var msg=data.games.length
+      ?(tab==="own"?"보유 중인 작품이 없어. 작품 추가할 때 '소장 중' 체크하면 여기 모여."
+        :tab==="toplay"?"'해보고 싶다'로 표시한 작품이 없어."
+        :tab==="tobuy"?"'갖고 싶다'로 표시한 작품이 없어."
+        :"조건에 맞는 작품이 없어.")
+      :"아직 기록이 없어. 오른쪽 위 <b>+ 작품 추가</b>로 첫 작품을 올려봐!";
+    $("list").innerHTML='<div class="empty"><div class="big">🕯️</div>'+msg+'</div>';return;
+  }
+
+  $("list").innerHTML=out.map(function(g){
+    var rs=rvOf(g.id),av=avgOf(g.id),ea=extAvg(g);
+    var last=rs.filter(function(r){return r.text&&!r.spoiler;})
+               .sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);})[0];
+    var right=(av?'<div class="num">'+av.toFixed(1)+'</div>':'<div class="num none">미평가</div>')+
+      starsHTML(av,"sm")+'<div class="cnt">후기 '+rs.length+'</div>'+
+      (av&&ea?'<div class="gap '+(av>=ea?"up":"down")+'">외부 대비 '+(av>=ea?"+":"")+(av-ea).toFixed(1)+'</div>':"")+
+      (!av&&ea?'<div class="cnt" style="margin-top:4px">외부 '+ea.toFixed(1)+'</div>':"");
+    return '<div class="card" data-open="'+g.id+'">'+
+      (g.image?'<img class="thumb" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
+      '<div class="main">'+
+      '<div class="ttl"><h3 class="serif">'+esc(g.title)+'</h3>'+
+        (g.owned?'<span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':"")+
+        (g.lentTo?'<span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
+        (g.status==="toplay"?'<span class="badge toplay">해보고싶다</span>':"")+
+        (g.status==="tobuy"?'<span class="badge tobuy">갖고싶다</span>':"")+
+        (g.gm?'<span class="badge">GM 필요</span>':"")+
+      '</div>'+
+      '<div class="meta">'+(pplText(g)?'<span>👤 '+pplText(g)+'</span>':"")+
+        (g.playtime?'<span>⏱ '+fmtTime(g.playtime)+'</span>':"")+
+        (diffOf(g.id)?'<span>🧩 난이도 '+diffOf(g.id).toFixed(1)+'/5</span>':"")+'</div>'+
+      ((g.extMml||g.extMdms)?'<div class="ext">'+
+        (g.extMml?'<span>머미로그 <b>'+g.extMml.toFixed(1)+'</b></span>':"")+
+        (g.extMdms?'<span>마다미스 <b>'+g.extMdms.toFixed(1)+'</b></span>':"")+'</div>':"")+
+      ((g.tags&&g.tags.length)?'<div class="tags">'+g.tags.map(function(t){return '<span class="tag">#'+esc(t)+'</span>';}).join("")+'</div>':"")+
+      (last&&last.text?'<div class="oneline">“'+esc(last.text)+'” <b>— '+esc(last.nick||"익명")+'</b></div>':"")+
+      '</div><div class="score">'+right+'</div></div>';
+  }).join("");
+}
+$("q").oninput=function(){filters.q=this.value.trim();renderList();};
+$("fPlayers").onchange=function(){filters.players=this.value;renderList();};
+$("sortBy").onchange=function(){filters.sort=this.value;renderList();};
+$("list").onclick=function(e){var c=e.target.closest("[data-open]");if(c)openGame(c.dataset.open);};
+
+/* ---------- modal ---------- */
+function openModal(html){$("modal").innerHTML=html;$("overlay").classList.add("open");document.body.style.overflow="hidden";}
+function closeModal(){$("overlay").classList.remove("open");document.body.style.overflow="";openGameId=null;editingReview=null;}
+$("overlay").onclick=function(e){if(e.target===$("overlay")||e.target.closest("[data-close]"))closeModal();};
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeModal();});
+
+function starInput(id,initial){
+  var h=[];for(var i=1;i<=10;i++)h.push('<i data-v="'+(i/2)+'"></i>');
+  return '<span class="starin" id="'+id+'" data-val="'+(initial||0)+'" style="--pct:'+((initial||0)/5*100)+'%">'+
+    '<span class="stars lg" style="--pct:inherit"><span class="bg">★★★★★</span><span class="fg">★★★★★</span></span>'+
+    '<span class="hits">'+h.join("")+'</span></span>';
+}
+function setStarVal(id,v){
+  var el=$(id);if(!el)return;
+  el.dataset.val=v; el.style.setProperty("--pct",(v/5*100)+"%");
+}
+function ratingOptions(cur){
+  var o='<option value="0"'+(!cur?" selected":"")+'>미정</option>';
+  for(var v=0.5;v<=5.0001;v+=0.5){
+    var s=v.toFixed(1);
+    o+='<option value="'+s+'"'+(Math.abs(cur-v)<0.01?" selected":"")+'>'+s+'점</option>';
+  }
+  return o;
+}
+function wireStar(id,onChange){
+  var el=$(id);if(!el)return;
+  function set(v,temp){el.style.setProperty("--pct",(v/5*100)+"%");if(!temp){el.dataset.val=v;if(onChange)onChange(v);}}
+  el.querySelectorAll(".hits i").forEach(function(h){
+    h.onmouseenter=function(){set(+h.dataset.v,true);el.classList.add("dim");};
+    h.onclick=function(){el.classList.remove("dim");set(+h.dataset.v);};});
+  el.onmouseleave=function(){el.classList.remove("dim");set(+el.dataset.val,true);};
+}
+
+/* ---------- game form ---------- */
+function gameForm(g){
+  g=g||{};
+  var st=g.status||((tab==="toplay"||tab==="tobuy")?tab:"played");
+  var owned=g.id?!!g.owned:(tab==="own");
+  return '<div class="head"><h2 class="serif">'+(g.id?"작품 수정":"작품 추가")+'</h2><button class="ghost icon" data-close>✕</button></div>'+
+  '<div class="body">'+
+    '<div class="field"><label>작품 사진</label>'+
+      '<div class="imgbox">'+
+        '<img id="gImgPrev" src="'+esc(g.image||"")+'" alt="" style="'+(g.image?"":"display:none")+'">'+
+        '<div class="side">'+
+          '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+            '<button id="gImgBtn">📷 사진 올리기</button>'+
+            '<button id="gImgClear" style="'+(g.image?"":"display:none")+'">빼기</button>'+
+          '</div>'+
+          '<input type="text" id="gImg" value="'+esc(g.image||"")+'" placeholder="또는 이미지 주소 붙여넣기" style="margin-top:7px">'+
+          '<div class="hint" id="gImgMsg">없어도 돼. 박스 사진 찍어서 올려도 되고!</div>'+
+        '</div>'+
+      '</div>'+
+      '<input type="file" id="gFile" accept="image/*" style="display:none">'+
+    '</div>'+
+    '<div class="field"><label>제목 *</label><input type="text" id="gTitle" value="'+esc(g.title||"")+'" placeholder="예) 달마저 숨은 밤"></div>'+
+    '<div class="row">'+
+      '<div class="field"><label>최소 인원</label><input type="number" id="gMin" min="1" max="20" value="'+(g.minP||"")+'"></div>'+
+      '<div class="field"><label>최대 인원</label><input type="number" id="gMax" min="1" max="20" value="'+(g.maxP||"")+'"></div>'+
+      '<div class="field"><label>플레이타임(분)</label><input type="number" id="gTime" min="10" step="10" value="'+(g.playtime||"")+'"></div>'+
+    '</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>위시 상태</label><select id="gStatus">'+
+        '<option value="played"'+(st==="played"?" selected":"")+'>없음 (그냥 목록에)</option>'+
+        '<option value="toplay"'+(st==="toplay"?" selected":"")+'>해보고 싶다</option>'+
+        '<option value="tobuy"'+(st==="tobuy"?" selected":"")+'>갖고 싶다</option></select></div>'+
+      '<div class="field"><label>GM</label><select id="gGm">'+
+        '<option value="0"'+(!g.gm?" selected":"")+'>필요 없음</option><option value="1"'+(g.gm?" selected":"")+'>GM 필요</option></select></div>'+
+    '</div>'+
+    '<div class="hint" style="margin:-6px 0 12px">난이도는 후기 쓰는 사람들이 각자 매기고 평균으로 표시돼. 모든 작품에 후기를 달 수 있어 — 아직 안 해본 작품도 괜찮아.</div>'+
+    '<label class="chkline"><input type="checkbox" id="gOwned"'+(owned?" checked":"")+'> 소장 중 (보유 작품 탭에 표시)</label>'+
+    '<div class="field"><label>보유자 — 누가 갖고 있어? (여러 명이면 쉼표로)</label>'+
+      '<div class="row"><input type="text" id="gOwner" list="ownerList" value="'+esc(g.owner||"")+'" placeholder="예) 인형, 수경">'+
+      '<button style="flex:0 0 auto" id="gOwnerMe">나 추가</button></div>'+
+      '<datalist id="ownerList">'+ownerList().map(function(o){return '<option value="'+esc(o.name)+'">';}).join("")+'</datalist>'+
+      '<div class="hint">모임 때 누가 들고 와야 하는지 바로 보여. 같은 작품을 여러 명이 갖고 있어도 돼.</div></div>'+
+    '<label class="chkline"><input type="checkbox" id="gLentChk"'+(g.lentTo?" checked":"")+'> 🚚 지금 밖에 대여 중 (남한테 빌려줌)</label>'+
+    '<div class="field" id="gLentWrap" style="'+(g.lentTo?"":"display:none")+'">'+
+      '<input type="text" id="gLent" value="'+esc(g.lentTo==="대여 중"?"":(g.lentTo||""))+'" placeholder="누가 빌려갔어? (안 적어도 돼)">'+
+      '<div class="hint">돌려받으면 체크를 풀어줘.</div></div>'+
+    '<div class="field"><label>태그 (쉼표로 구분)</label><input type="text" id="gTags" value="'+esc((g.tags||[]).join(", "))+'" placeholder="본격추리, 감동, 하드, 밀담많음"></div>'+
+
+    '<div class="sectitle">외부 평점 (안 적으면 미정)</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>머미로그 평점</label><input type="number" id="gMml" min="0" max="5" step="0.1" value="'+(g.extMml||"")+'" placeholder="미정"></div>'+
+      '<div class="field"><label>마다미스(mdms) 평점</label><input type="number" id="gMdms" min="0" max="5" step="0.1" value="'+(g.extMdms||"")+'" placeholder="미정"></div>'+
+    '</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>머미로그 링크</label><input type="text" id="gLmml" value="'+esc(g.linkMml||"")+'" placeholder="비워도 됨"></div>'+
+      '<div class="field"><label>mdms 링크</label><input type="text" id="gLmdms" value="'+esc(g.linkMdms||"")+'" placeholder="비워도 됨"></div>'+
+    '</div>'+
+
+    '<div class="field" style="margin-top:14px"><label>메모 · 구매처</label><textarea id="gNote" placeholder="구성물 상태, 주의사항, 어디서 샀는지, 빌려준 사람 등">'+esc(g.note||"")+'</textarea></div>'+
+  '</div>'+
+  '<div class="foot">'+(g.id?'<button id="gDel" style="margin-right:auto;color:var(--accent)">삭제</button>':"")+
+    '<button data-close>취소</button><button class="primary" id="gSave">저장</button></div>';
+}
+function resizeImage(file,max,cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width,h=img.height;
+      if(w>max||h>max){var s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s);}
+      var c=document.createElement("canvas");c.width=w;c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      cb(c.toDataURL("image/jpeg",0.82).split(",")[1]);
+    };
+    img.onerror=function(){cb(null);};
+    img.src=fr.result;
+  };
+  fr.onerror=function(){cb(null);};
+  fr.readAsDataURL(file);
+}
+
+function openGameForm(g){
+  openModal(gameForm(g));
+
+  function showImg(url){
+    $("gImg").value=url||"";
+    $("gImgPrev").src=url||"";
+    $("gImgPrev").style.display=url?"block":"none";
+    $("gImgClear").style.display=url?"inline-block":"none";
+  }
+  $("gImgBtn").onclick=function(){$("gFile").click();};
+  $("gImgClear").onclick=function(){showImg("");};
+  $("gImg").onchange=function(){showImg(this.value.trim());};
+  $("gFile").onchange=function(){
+    var f=this.files[0];this.value="";if(!f)return;
+    $("gImgMsg").textContent="올리는 중… (사진 크기에 따라 몇 초 걸려)";
+    $("gImgBtn").disabled=true;
+    resizeImage(f,1000,function(b64){
+      if(!b64){$("gImgMsg").textContent="이 사진은 못 읽었어. 다른 파일로 해볼래?";$("gImgBtn").disabled=false;return;}
+      call("uploadImage",{data:b64,mime:"image/jpeg",name:($("gTitle").value.trim()||"mumi")})
+        .then(function(res){
+          $("gImgBtn").disabled=false;
+          if(res&&res.ok){showImg(res.url);$("gImgMsg").textContent="올렸어! 저장 눌러야 최종 반영돼.";}
+          else{$("gImgMsg").textContent=(res&&res.msg)||"업로드 실패 😢";}
+        }).catch(function(e){$("gImgBtn").disabled=false;$("gImgMsg").textContent="업로드 실패 😢";});
+    });
+  };
+
+  $("gLentChk").onchange=function(){
+    $("gLentWrap").style.display=this.checked?"block":"none";
+    if(this.checked) $("gLent").focus();
+  };
+  $("gOwnerMe").onclick=function(){
+    if(!myName){toast("먼저 오른쪽 위에서 내 이름을 정해줘!");return;}
+    var cur=$("gOwner").value.split(",").map(function(s){return s.trim();}).filter(Boolean);
+    if(cur.indexOf(myName)<0) cur.push(myName);
+    $("gOwner").value=cur.join(", ");
+    $("gOwned").checked=true;
+  };
+  $("gSave").onclick=function(){
+    var t=$("gTitle").value.trim();if(!t){$("gTitle").focus();return;}
+    var obj={
+      id:g?g.id:"", createdAt:g?g.createdAt:0, title:t,
+      minP:+$("gMin").value||0, maxP:+$("gMax").value||0,
+      playtime:+$("gTime").value||0, difficulty:0,
+      status:$("gStatus").value, gm:$("gGm").value==="1", owned:$("gOwned").checked,
+      owner:$("gOwner").value.trim(),
+      image:$("gImg").value.trim(),
+      lentTo:$("gLentChk").checked?($("gLent").value.trim()||"대여 중"):"",
+      tags:$("gTags").value.split(",").map(function(s){return s.trim();}).filter(Boolean).slice(0,8).join(", "),
+      note:$("gNote").value.trim(),
+      extMml:+$("gMml").value||0, extMdms:+$("gMdms").value||0,
+      linkMml:$("gLmml").value.trim(), linkMdms:$("gLmdms").value.trim()
+    };
+    this.disabled=true;this.textContent="저장 중…";
+    var self=this;
+    call("saveGame",obj).then(function(d){
+      apply(d);
+      var found=d.games.filter(function(x){return x.title===t;})[0];
+      closeModal(); if(found) openGame(found.id); toast("저장했어!");
+    }).catch(function(e){self.disabled=false;self.textContent="저장";fail(e);});
+  };
+  if($("gDel"))$("gDel").onclick=function(){
+    if(!confirm("이 작품이랑 달린 후기 전부 지울까?"))return;
+    this.disabled=true;
+    call("deleteGame",g.id).then(function(d){apply(d);closeModal();toast("지웠어");}).catch(fail);
+  };
+  setTimeout(function(){if($("gTitle"))$("gTitle").focus();},60);
+}
+$("btnAdd").onclick=function(){if(!loaded){toast("아직 불러오는 중이야!");return;}openGameForm(null);};
+
+/* ---------- detail ---------- */
+function openGame(id){openGameId=id;editingReview=null;renderModalGame();
+  $("overlay").classList.add("open");document.body.style.overflow="hidden";}
+
+function renderModalGame(){
+  var g=gameById(openGameId);if(!g){closeModal();return;}
+  var rs=rvOf(g.id).sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+  var av=avgOf(g.id);
+  var ed=editingReview?rs.filter(function(r){return r.id===editingReview;})[0]:null;
+
+  $("modal").innerHTML=
+  '<div class="head"><h2 class="serif">'+esc(g.title)+
+    (g.owned?' <span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':"")+
+    (g.lentTo?' <span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
+    (g.status==="toplay"?' <span class="badge toplay">해보고싶다</span>':"")+
+    (g.status==="tobuy"?' <span class="badge tobuy">갖고싶다</span>':"")+
+  '</h2><button class="ghost icon" id="gEdit" title="작품 정보 수정">✎</button><button class="ghost icon" data-close>✕</button></div>'+
+  '<div class="body">'+
+    (g.image?'<img class="cover" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
+    '<div class="infobar">'+
+      '<span class="big">'+(av?av.toFixed(1):"–")+'</span>'+starsHTML(av,"md")+
+      '<span style="color:var(--text3);font-size:12px">후기 '+rs.length+'</span>'+
+      '<span style="margin-left:auto">'+(pplText(g)?'👤 '+pplText(g):"인원 미정")+
+        (g.playtime?' &nbsp;·&nbsp; ⏱ '+fmtTime(g.playtime):"")+
+        (diffOf(g.id)?' &nbsp;·&nbsp; 🧩 난이도 '+diffOf(g.id).toFixed(1)+'/5 ('+diffN(g.id)+'명)':"")+
+        (g.gm?' &nbsp;·&nbsp; GM 필요':"")+'</span></div>'+
+
+    ((av||g.extMml||g.extMdms)?'<div class="cmp">'+
+      '<div><div class="lb">우리</div><div class="vl">'+(av?av.toFixed(1):"–")+'</div></div>'+
+      '<div><div class="lb">머미로그</div><div class="vl">'+(g.extMml?g.extMml.toFixed(1):"–")+'</div>'+
+        (g.linkMml?'<a href="'+esc(g.linkMml)+'" target="_blank">보러가기</a>':"")+'</div>'+
+      '<div><div class="lb">마다미스</div><div class="vl">'+(g.extMdms?g.extMdms.toFixed(1):"–")+'</div>'+
+        (g.linkMdms?'<a href="'+esc(g.linkMdms)+'" target="_blank">보러가기</a>':"")+'</div>'+
+    '</div>':"")+
+
+    ((g.tags&&g.tags.length)?'<div class="tags" style="margin-top:10px">'+g.tags.map(function(t){return '<span class="tag">#'+esc(t)+'</span>';}).join("")+'</div>':"")+
+    (g.note?'<div style="margin-top:12px;font-size:13.5px;color:var(--text2);white-space:pre-wrap">'+esc(g.note)+'</div>':"")+
+
+    '<div class="sectitle" id="rvHead">'+(ed?"후기 수정 중":"별점 남기기")+'</div>'+
+    '<div style="text-align:center;margin-bottom:8px">'+starInput("rvStar",ed?ed.rating:0)+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:9px;margin-top:10px;flex-wrap:wrap">'+
+        '<select id="rvPick" style="width:auto">'+ratingOptions(ed?ed.rating:0)+'</select>'+
+        '<span class="hint" id="rvVal" style="margin:0">'+(ed&&ed.rating?ed.rating.toFixed(1)+" / 5":"별을 눌러도 되고, 여기서 골라도 돼 (0.5점 단위)")+'</span>'+
+      '</div></div>'+
+    '<div class="field"><label>이름 (본명)</label>'+
+      '<input type="text" id="rvNick" list="nickList" value="'+esc(ed?ed.nick:myName)+'" placeholder="본명을 적어줘">'+
+      '<datalist id="nickList">'+people().map(function(p){return '<option value="'+esc(p.name)+'">';}).join("")+'</datalist>'+
+      '<div class="hint">한 기기에서 여러 명이 돌아가며 써도 돼 — 이름만 바꾸고 등록!<br>'+
+      '💡 <b>꼭 본명으로.</b> 그래야 사람들 탭에서 서로 평점·취향이 비교돼.</div></div>'+
+    '<div class="field"><label>체감 난이도</label><select id="rvDiff">'+
+      '<option value="0"'+(!(ed&&ed.difficulty)?" selected":"")+'>미정</option>'+
+      ['쉬움','조금 쉬움','보통','어려움','많이 어려움'].map(function(t,i){
+        var n=i+1;return '<option value="'+n+'"'+((ed&&ed.difficulty)===n?" selected":"")+'>'+n+' — '+t+'</option>';}).join("")+
+      '</select><div class="hint">각자 매긴 난이도가 평균으로 표시돼.</div></div>'+
+    '<div class="field"><label>한줄평 · 후기</label><textarea id="rvText" placeholder="스포 없이 분위기만 적어도 좋아">'+esc(ed?ed.text:"")+'</textarea></div>'+
+    '<label class="chkline"><input type="checkbox" id="rvSpoiler"'+(ed&&ed.spoiler?" checked":"")+'> 스포일러 있음 (가려서 보여주기)</label>'+
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">'+
+      (ed?'<button id="rvCancel">취소</button>':"")+
+      '<button class="primary" id="rvSave">'+(ed?"수정하기":"등록하기")+'</button></div>'+
+
+    '<div class="sectitle">후기 '+rs.length+'</div>'+
+    (rs.length?rs.map(function(r){
+      return '<div class="rv"><div class="top">'+starsHTML(r.rating,"sm")+
+        '<span class="nick">'+esc(r.nick||"익명")+'</span>'+
+        (r.difficulty?'<span class="tag">난이도 '+r.difficulty+'</span>':"")+
+        '<span class="act">'+fmtDate(r.createdAt)+
+        ' <a data-edrv="'+r.id+'">수정</a><a data-delrv="'+r.id+'">삭제</a></span></div>'+
+        (r.text?(r.spoiler
+          ?'<div class="spo" data-spo="'+r.id+'"><span>🤫 스포일러가 들어 있는 후기야</span>'+
+             '<button type="button">내용 보기</button></div>'+
+           '<div class="txt" id="spotxt-'+r.id+'" style="display:none">'+esc(r.text)+'</div>'
+          :'<div class="txt">'+esc(r.text)+'</div>'):"")+'</div>';
+    }).join(""):'<div style="color:var(--text3);font-size:13px;padding:6px 0">아직 후기가 없어. 첫 번째로 남겨봐!</div>')+
+  '</div>';
+
+  $("gEdit").onclick=function(){openGameForm(g);};
+  if($("rvStar")){
+    wireStar("rvStar",function(v){
+      $("rvVal").textContent=v?v.toFixed(1)+" / 5":"미정";
+      $("rvPick").value=v?v.toFixed(1):"0";
+    });
+    $("rvPick").onchange=function(){
+      var v=+this.value; setStarVal("rvStar",v);
+      $("rvVal").textContent=v?v.toFixed(1)+" / 5":"미정";
+    };
+    $("rvSave").onclick=function(){saveRv(g,ed,this);};
+    if($("rvCancel"))$("rvCancel").onclick=function(){editingReview=null;renderModalGame();};
+  }
+  $("modal").querySelectorAll("[data-spo]").forEach(function(el){
+    el.querySelector("button").onclick=function(){
+      if(!confirm("⚠️ 이 후기에는 스포일러가 들어 있어.\n\n아직 이 작품 안 했으면 지금 보면 안 돼!\n정말 볼까?")) return;
+      el.style.display="none";
+      var t=$("spotxt-"+el.dataset.spo); if(t) t.style.display="block";
+    };
+  });
+  $("modal").querySelectorAll("[data-edrv]").forEach(function(a){a.onclick=function(e){
+    e.preventDefault();
+    editingReview=a.dataset.edrv;
+    renderModalGame();
+    var h=$("rvHead");
+    if(h){
+      h.classList.add("flash");
+      try{ h.scrollIntoView({behavior:"smooth",block:"center"}); }
+      catch(err){ h.scrollIntoView(); }
+    }
+  };});
+  $("modal").querySelectorAll("[data-delrv]").forEach(function(a){a.onclick=function(e){
+    e.preventDefault();
+    if(!confirm("이 후기를 지울까?"))return;
+    toast("지우는 중…");
+    call("deleteReview",a.dataset.delrv).then(function(d){apply(d);toast("지웠어");}).catch(fail);};});
+}
+
+function saveRv(g,ed,btn){
+  var rating=+$("rvStar").dataset.val||0;
+  var text=$("rvText").value.trim();
+  if(!rating&&!text){alert("별점이나 한줄평 중 하나는 남겨줘!");return;}
+  var nick=$("rvNick").value.trim()||myName;
+  if(!nick){alert("이름을 적어줘! 본명으로 써야 사람들 탭에서 비교가 돼 🙂");$("rvNick").focus();return;}
+  if(!myName){myName=nick;ls("mumi_nick",nick);renderName();}
+  var obj={id:ed?ed.id:"",gameId:g.id,nick:nick,rating:rating,text:text,
+           difficulty:+$("rvDiff").value||0,
+           spoiler:$("rvSpoiler").checked,createdAt:ed?ed.createdAt:0};
+  btn.disabled=true;btn.textContent="저장 중…";
+  editingReview=null;
+  call("saveReview",obj).then(function(d){apply(d);toast("올렸어! 🎉");})
+    .catch(function(e){btn.disabled=false;btn.textContent="등록하기";fail(e);});
+}
+
+/* ---------- go ---------- */
+renderName(); load();
+})();
+</script>
+</body>
+</html>
