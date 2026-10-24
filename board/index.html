@@ -354,7 +354,10 @@ function call(fn,...args){
 function errMsg(e){return (e&&e.message?e.message:String(e||'')).replace(/^Exception:\s*/,'')||'저장이 안 됐어요. 다시 해주세요.'}
 function apply(data){
   if(!data)return;
-  slots=data.slots||[];signups=data.signups||[];notice=data.notice||'';loaded=true;render();
+  // 예전 버전 서버(ID 칸 없음)에서 와도 보이게 맞춰줌
+  slots=(data.slots||[]).map(s=>Object.assign({},s,{id:s.id||s.date}));
+  signups=(data.signups||[]).map(x=>Object.assign({},x,{slot:x.slot||x.date}));
+  notice=data.notice||'';loaded=true;render();
 }
 async function refresh(){try{apply(await call('getData'))}catch(e){if(!loaded)$('#list').innerHTML=inGas?'<div class="blank">불러오지 못했어요. 새로고침 해주세요.</div>':`<div class="blank">지금 이 주소에서는 날짜를 불러오지 못했어요.<br><a href="${API_URL}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">구글 모집판에서 열기 →</a></div>`}}
 
