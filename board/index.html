@@ -63,7 +63,8 @@ h1{margin:2px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(3
 .btn:disabled{opacity:.5;cursor:default}
 .link{border:none;background:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:0}
 
-.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;justify-content:space-between}
+.bar .left{display:flex;flex-wrap:wrap;gap:10px;align-items:center;min-width:0}
 .months{display:flex;flex-wrap:wrap;gap:6px}
 .months button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 14px;cursor:pointer;font-weight:500}
 .months button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -85,6 +86,16 @@ h1{margin:2px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(3
 .pill.full{background:var(--warn-soft);color:var(--warn)}
 .pill.done{background:var(--ink);color:var(--paper)}
 .pill.off{background:var(--stop-soft);color:var(--stop)}
+.pill.spare{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.slot.spare{background:transparent;border-style:dashed}
+.ampm{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;background:var(--warn-soft);color:var(--warn)}
+.views{display:flex;gap:0;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;width:fit-content;max-width:100%}
+.views button{border:none;background:var(--paper);padding:7px 16px;font-weight:600;cursor:pointer;color:var(--ink)}
+.views button+button{border-left:1.5px solid var(--ink)}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.views small{font-family:var(--mono);font-weight:500;margin-left:4px;opacity:.75}
+.viewnote{grid-column:1/-1;margin:0;font-size:13.5px;color:var(--muted);background:var(--paper);border:1px dashed var(--line);border-radius:8px;padding:10px 14px}
+.bulk .danger.armed{background:var(--stop);color:var(--paper)}
 .game{font-family:var(--display);font-size:17px;font-weight:700;overflow-wrap:anywhere}
 .game.tbd{font-family:var(--body);font-weight:400;font-size:14px;color:var(--muted)}
 .note{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
@@ -225,6 +236,16 @@ body.has-bar .toast{bottom:150px}
     <div class="step">
       <span class="stepno">3</span>
       <div class="stepbody">
+        <span class="steptitle">종류</span>
+        <div class="seg" role="radiogroup" aria-label="날짜 종류">
+          <label><input type="radio" name="omKind" value="모집 중" checked><span>모집</span></label>
+          <label><input type="radio" name="omKind" value="예비"><span>예비 날짜</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="stepno">4</span>
+      <div class="stepbody">
         <span class="steptitle">날짜</span>
         <div class="row">
           <input id="omMonth" type="month" aria-label="열 달">
@@ -236,12 +257,12 @@ body.has-bar .toast{bottom:150px}
         </div>
         <div class="row">
           <input id="odDate" type="date" aria-label="하루만 추가할 날짜">
-          <button class="btn ghost" id="odGo" type="button">이 날짜만 추가</button>
-          <span class="lbl">평일 하루 되는 날은 여기로</span>
+          <button class="btn ghost" id="odGo" type="button">이 날짜에 추가</button>
+          <span class="lbl">평일 하루, 또는 이미 있는 날에 다른 시간 타임(오전 타임 등)을 더할 때</span>
         </div>
       </div>
     </div>
-    <p class="ownertip">이미 연 날짜를 여러 개 한꺼번에 바꾸려면, 카드의 ‘선택’을 체크하고 화면 아래 <b>방장 일괄 변경</b>을 쓰세요.</p>
+    <p class="ownertip">이미 연 날짜를 여러 개 한꺼번에 바꾸거나 <b>지우려면</b>, 카드의 ‘선택’을 체크하고 화면 아래 <b>방장 일괄 변경</b>을 쓰세요.</p>
   </section>
 
   <section class="guide" aria-label="여러 날짜 한 번에 참여하는 법">
@@ -250,7 +271,13 @@ body.has-bar .toast{bottom:150px}
   </section>
 
   <div class="bar">
-    <nav class="months" id="months" aria-label="달 선택"></nav>
+    <div class="left">
+      <div class="views" id="views" role="group" aria-label="보기">
+        <button type="button" data-v="main" aria-pressed="true">일정</button>
+        <button type="button" data-v="spare" aria-pressed="false">예비 날짜<small id="spareN"></small></button>
+      </div>
+      <nav class="months" id="months" aria-label="달 선택"></nav>
+    </div>
     <label class="toggle"><input type="checkbox" id="showPast"> 지난 날짜도 보기</label>
   </div>
 
@@ -289,9 +316,10 @@ body.has-bar .toast{bottom:150px}
       <input type="text" id="bkGame" maxlength="40" placeholder="게임 (비우면 그대로)" aria-label="게임 바꾸기">
       <select id="bkStatus" aria-label="상태 바꾸기">
         <option value="keep">상태 그대로</option>
-        <option>모집 중</option><option>확정</option><option>취소</option>
+        <option>모집 중</option><option>확정</option><option>예비</option><option>취소</option>
       </select>
       <button class="btn small" type="button" id="bkGo">선택한 날짜에 적용</button>
+      <button class="btn small danger" type="button" id="bkDel">선택한 날짜 삭제</button>
     </div>
   </div>
 </div>
@@ -302,7 +330,7 @@ const DOW=['일','월','화','수','목','금','토'];
 const MIN_PLAYERS=4;
 let slots=[], signups=[], notice='', loaded=false;
 let isOwner=false, pw='';
-let month=null, showPast=false, pending=false, editingNotice=false;
+let month=null, showPast=false, pending=false, editingNotice=false, view='main', bkArmed=false;
 const drafts={}, openEdits=new Set(), armedDelete=new Set(), selected=new Set();
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -336,8 +364,11 @@ nameEl.value=ls('mumi-name')||'';
 nameEl.addEventListener('input',()=>{ls('mumi-name',nameEl.value.trim());render(true)});
 const myName=()=>nameEl.value.trim();
 
-function bySlot(date){return signups.filter(x=>x.date===date).sort((a,b)=>a.at<b.at?-1:a.at>b.at?1:a.row-b.row)}
+function bySlot(id){return signups.filter(x=>x.slot===id).sort((a,b)=>a.at<b.at?-1:a.at>b.at?1:a.row-b.row)}
 let editingMemo=null; const armedOut=new Set();
+const cmp=(a,b)=>a.date!==b.date?(a.date<b.date?-1:1):(a.start<b.start?-1:a.start>b.start?1:0);
+const sameDay=s=>slots.filter(x=>x.date===s.date&&x.status!=='취소').length>1;
+function slotLabel(s){const d=parse(s.date);return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})${sameDay(s)?' '+(s.start<'12:00'?'오전':'오후'):''}`}
 
 const MAX_PLAYERS=9;
 const CAP_OPTIONS=['',4,5,6,7,8,9]; // '' = 인원 미정
@@ -347,6 +378,7 @@ const capLabel=c=>c?c+'인':'미정 (4~9인)';
 function state(s,n,cap,fixed){
   if(s.status==='취소')return['off','취소됨'];
   if(s.status==='확정')return['done','확정'];
+  if(s.status==='예비')return['spare','예비 · '+n+'명 가능'];
   if(fixed){
     if(n>=cap)return['ok','인원 완성'+(n>cap?' · 대기 '+(n-cap):' · 대기 가능')];
     return['','모집 중 · '+(cap-n)+'명 더'];
@@ -369,16 +401,18 @@ function renderNotice(){
 }
 
 function renderBar(){
-  if(loaded){const ok=new Set(slots.filter(s=>isOwner||s.status!=='취소').map(s=>s.date));for(const k of [...selected])if(!ok.has(k))selected.delete(k)}
+  if(loaded){const ok=new Set(slots.filter(s=>isOwner||s.status!=='취소').map(s=>s.id));for(const k of [...selected])if(!ok.has(k))selected.delete(k)}
   const bar=$('#multibar'), n=selected.size;
   bar.hidden=!n;document.body.classList.toggle('has-bar',!!n);
   $('#mbBulk').hidden=!isOwner;document.body.classList.toggle('has-bulk',isOwner);
   if(!n)return;
-  const ds=[...selected].sort().map(k=>{const d=parse(k);return`${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`});
-  $('#mbSum').innerHTML=`${n}일 선택 <small>${esc(ds.join(' · '))}</small>`;
-  const name=myName(), mineCnt=name?signups.filter(x=>selected.has(x.date)&&x.name===name).length:0;
+  const ds=slots.filter(s=>selected.has(s.id)).sort(cmp).map(slotLabel);
+  $('#mbSum').innerHTML=`${n}개 선택 <small>${esc(ds.join(' · '))}</small>`;
+  const name=myName(), mineCnt=name?signups.filter(x=>selected.has(x.slot)&&x.name===name).length:0;
   $('#mbLeave').hidden=!mineCnt;
-  $('#mbLeave').textContent=`내 이름 빼기 (${mineCnt}일)`;
+  $('#mbLeave').textContent=`내 이름 빼기 (${mineCnt}개)`;
+  $('#bkDel').classList.toggle('armed',bkArmed);
+  $('#bkDel').textContent=bkArmed?`정말 ${n}개 삭제 (이름도 같이 지워져요)`:'선택한 날짜 삭제';
 }
 
 function render(force){
@@ -389,26 +423,30 @@ function render(force){
   pending=false;
   if(!loaded)return;
   const t=today();
-  const all=[...slots].sort((a,b)=>a.date<b.date?-1:1);
-  const vis=all.filter(s=>showPast||s.date>=t);
+  const all=[...slots].sort(cmp).filter(s=>showPast||s.date>=t);
+  const spareCnt=all.filter(s=>s.status==='예비').length;
+  $('#spareN').textContent=spareCnt?String(spareCnt):'';
+  document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===view)));
+  const vis=all.filter(s=>view==='spare'?s.status==='예비':s.status!=='예비');
   const months=[...new Set(vis.map(s=>s.date.slice(0,7)))];
   if(!month||!months.includes(month))month=months[0]||null;
   $('#months').innerHTML=months.map(m=>{const[y,mm]=m.split('-');return`<button type="button" data-m="${m}" aria-pressed="${m===month}">${+mm}월${y!==t.slice(0,4)?` <small>${y}</small>`:''}</button>`}).join('');
   const list=$('#list');
   const items=vis.filter(s=>s.date.slice(0,7)===month);
-  if(!items.length){list.innerHTML=`<div class="blank">${isOwner?'아직 열린 날짜가 없어요. 위에서 달을 골라 날짜를 열어주세요.':'아직 열린 날짜가 없어요. 방장이 날짜를 열면 여기에 보여요.'}</div>`;return}
-  list.innerHTML=items.map(card).join('');
+  const spareNote=view==='spare'?'<p class="viewnote"><b>예비 날짜</b>는 아직 확정 안 된 후보 날짜예요. 되는 날에 이름을 넣어두면, 사람이 모이는 날을 골라 확정할게요.</p>':'';
+  if(!items.length){list.innerHTML=spareNote+`<div class="blank">${view==='spare'?'지금은 예비 날짜가 없어요.':isOwner?'아직 열린 날짜가 없어요. 위에서 달을 골라 날짜를 열어주세요.':'아직 열린 날짜가 없어요. 방장이 날짜를 열면 여기에 보여요.'}</div>`;return}
+  list.innerHTML=spareNote+items.map(card).join('');
   for(const [id,v] of Object.entries(drafts)){const el=document.getElementById(id);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}}
 }
 
 function card(s){
   const d=parse(s.date), dw=d.getDay(), cls=dw===6?'sat':dw===0?'sun':'';
-  const fixed=!!s.cap, cap=s.cap||MAX_PLAYERS, ppl=bySlot(s.date), n=ppl.length, inN=Math.min(n,cap);
+  const fixed=!!s.cap, cap=s.cap||MAX_PLAYERS, ppl=bySlot(s.id), n=ppl.length, inN=Math.min(n,cap);
   const [pc,pt]=state(s,n,cap,fixed);
   const dinner=ppl.slice(0,cap).filter(x=>x.dinner).length;
   const dots=Array.from({length:cap},(_,i)=>`<i class="${i<inN?'on':''}${!fixed&&i>=MIN_PLAYERS?' opt':''}"></i>`).join('');
   const countTxt=fixed?`${inN}/${cap}명`:`${inN}명 모임 · 4~9인`;
-  const k=s.date, joined=myName()&&ppl.some(x=>x.name===myName());
+  const k=s.id, joined=myName()&&ppl.some(x=>x.name===myName());
   const row=(x,i)=>{
     const id=esc(x.id), nm=esc(x.name);
     const memoEdit=editingMemo===x.id?`<div class="memoedit"><input type="text" id="me-${id}" data-d maxlength="30" value="${esc(x.note)}" placeholder="메모 (비우면 지워져요)" aria-label="${nm} 메모"><button class="mini on" type="button" data-act="memosave" data-id="${id}">저장</button><button class="mini" type="button" data-act="memocancel">취소</button></div>`:'';
@@ -430,16 +468,16 @@ function card(s){
         <span>게임</span><input type="text" id="eg-${k}" data-d maxlength="40" value="${esc(s.game)}" placeholder="비워두면 ‘미정’">
         <span>인원</span><select id="ec-${k}" data-d>${CAP_OPTIONS.map(c=>`<option value="${c}"${(c||null)===(s.cap||null)?' selected':''}>${capLabel(c)}</option>`).join('')}</select>
         <span>메모</span><input type="text" id="en-${k}" data-d maxlength="60" value="${esc(s.note)}" placeholder="장소, 준비물 등">
-        <span>상태</span><select id="et-${k}" data-d>${['모집 중','확정','취소'].map(v=>`<option${s.status===v?' selected':''}>${v}</option>`).join('')}</select>
+        <span>상태</span><select id="et-${k}" data-d>${['모집 중','확정','예비','취소'].map(v=>`<option${s.status===v?' selected':''}>${v}</option>`).join('')}</select>
       </div>
       <div class="acts"><button class="btn small" type="button" data-act="save" data-k="${k}">저장</button><button class="btn small danger" type="button" data-act="del" data-k="${k}">${armedDelete.has(k)?'정말 삭제 (이름도 같이 지워져요)':'날짜 삭제'}</button></div>
     </details>`:'';
   const sel=selected.has(k);
-  const pick=(s.status==='취소'&&!isOwner)?'':`<label class="pick"><input type="checkbox" data-pick="${k}"${sel?' checked':''} aria-label="${pad(d.getMonth()+1)}월 ${d.getDate()}일 선택"> 선택</label>`;
-  return `<article class="slot ${s.status==='취소'?'cancelled':''}${sel?' sel':''}">
+  const pick=(s.status==='취소'&&!isOwner)?'':`<label class="pick"><input type="checkbox" data-pick="${k}"${sel?' checked':''} aria-label="${esc(slotLabel(s))} 선택"> 선택</label>`;
+  return `<article class="slot ${s.status==='취소'?'cancelled':''}${s.status==='예비'?' spare':''}${sel?' sel':''}">
     <div class="date ${cls}"><span class="md">${pad(d.getMonth()+1)}.${pad(d.getDate())}</span><span class="dow">${DOW[dw]}</span>${cls?'':'<span class="wk">평일</span>'}</div>
     <div class="body">
-      <div class="meta"><span class="time">${esc(s.start)}–${esc(s.end)}</span><span class="capchip${fixed?' fixed':''}">${fixed?cap+'인 게임':'인원 미정'}</span><span class="pill ${pc}">${pt}</span>${pick}</div>
+      <div class="meta">${sameDay(s)?`<span class="ampm">${s.start<'12:00'?'오전 타임':'오후 타임'}</span>`:''}<span class="time">${esc(s.start)}–${esc(s.end)}</span><span class="capchip${fixed?' fixed':''}">${fixed?cap+'인 게임':'인원 미정'}</span><span class="pill ${pc}">${pt}</span>${pick}</div>
       ${s.game?`<div class="game">${esc(s.game)}</div>`:'<div class="game tbd">게임 미정 · 인원 보고 정해요</div>'}
       ${s.note?`<div class="note">${esc(s.note)}</div>`:''}
       <div class="seats"><div class="dots" aria-hidden="true">${dots}</div><span class="count">${countTxt}${n>cap?` +대기 ${n-cap}`:''}${dinner?` · 저녁 ${dinner}`:''}</span></div>
@@ -464,6 +502,7 @@ $('#notice').addEventListener('click',async e=>{
 });
 
 /* 날짜 카드 */
+$('#views').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(b){view=b.dataset.v;month=null;render(true)}});
 $('#months').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(b){month=b.dataset.m;render(true)}});
 $('#showPast').addEventListener('change',e=>{showPast=e.target.checked;render(true)});
 const list=$('#list');
@@ -486,14 +525,14 @@ $('#mbJoin').addEventListener('click',async e=>{
     const data=await call('joinMany',[...selected],name,$('#mbDinner').checked,$('#mbNote').value.trim());
     selected.clear();$('#mbNote').value='';$('#mbDinner').checked=false;apply(data);render(true);
     const a=(data.added||[]).length,sk=(data.skipped||[]).length;
-    toast(a?`${a}일에 들어갔어요${sk?` (이미 있던 ${sk}일은 건너뜀)`:''}`:'이미 다 들어가 있어요');
+    toast(a?`${a}개에 들어갔어요${sk?` (이미 있던 ${sk}개는 건너뜀)`:''}`:'이미 다 들어가 있어요');
   }catch(err){toast(errMsg(err))}
   finally{b.disabled=false;b.textContent='한 번에 참여'}
 });
 $('#mbLeave').addEventListener('click',async e=>{
   const name=myName();if(!name){nameEl.focus();return}
   const b=e.target;b.disabled=true;
-  try{const data=await call('leaveMany',[...selected],name);selected.clear();apply(data);render(true);toast(`${data.removed||0}일에서 뺐어요`)}
+  try{const data=await call('leaveMany',[...selected],name);selected.clear();apply(data);render(true);toast(`${data.removed||0}개에서 뺐어요`)}
   catch(err){toast(errMsg(err))}
   finally{b.disabled=false}
 });
@@ -538,7 +577,7 @@ list.addEventListener('click',async e=>{
   if(act==='save'){
     const v=p=>$('#'+p+'-'+k).value;
     b.disabled=true;
-    try{const data=await call('saveSlot',pw,{date:k,start:v('es'),end:v('ee'),game:v('eg'),cap:v('ec'),note:v('en'),status:v('et')});
+    try{const data=await call('saveSlot',pw,{id:k,start:v('es'),end:v('ee'),game:v('eg'),cap:v('ec'),note:v('en'),status:v('et')});
       ['es','ee','eg','ec','en','et'].forEach(p=>delete drafts[p+'-'+k]);apply(data);render(true);toast('저장했어요')}
     catch(err){toast(errMsg(err));b.disabled=false}
   }
@@ -564,17 +603,32 @@ $('#bkGo').addEventListener('click',async e=>{
     const n=selected.size;
     const data=await call('bulkUpdate',pw,[...selected],patch);
     ['bkStart','bkEnd','bkGame'].forEach(id=>$('#'+id).value='');$('#bkCap').value='keep';$('#bkStatus').value='keep';
-    selected.clear();apply(data);render(true);toast(n+'일 바꿨어요');
+    selected.clear();bkArmed=false;apply(data);render(true);toast(n+'개 바꿨어요');
   }catch(err){toast(errMsg(err))}
   finally{b.disabled=false}
 });
 
+$('#bkDel').addEventListener('click',async e=>{
+  if(!bkArmed){bkArmed=true;renderBar();setTimeout(()=>{if(bkArmed){bkArmed=false;renderBar()}},5000);return}
+  bkArmed=false;
+  const b=e.target;b.disabled=true;
+  try{const data=await call('deleteSlots',pw,[...selected]);selected.clear();apply(data);render(true);toast((data.removed||0)+'개 지웠어요')}
+  catch(err){toast(errMsg(err))}
+  finally{b.disabled=false;renderBar()}
+});
+$('#mbClear').addEventListener('click',()=>{bkArmed=false});
+
 /* 방장: 날짜 열기 */
 async function openDates(dates){
-  const have=new Set(slots.map(s=>s.date)), fresh=dates.filter(d=>!have.has(d));
-  if(!fresh.length){toast('이미 다 열려 있어요');return}
-  try{const data=await call('openDates',pw,fresh,$('#omStart').value||'13:00',$('#omEnd').value||'18:00',(document.querySelector('input[name=omCap]:checked')||{}).value||'');month=fresh[0].slice(0,7);apply(data);toast(fresh.length+'일 열었어요')}
-  catch(err){toast(errMsg(err))}
+  const start=$('#omStart').value||'13:00';
+  const fresh=dates.filter(d=>!slots.some(s=>s.date===d&&s.start===start));
+  if(!fresh.length){toast('같은 날짜·같은 시간이 이미 열려 있어요');return}
+  const kind=(document.querySelector('input[name=omKind]:checked')||{}).value||'모집 중';
+  try{
+    const data=await call('openDates',pw,fresh,start,$('#omEnd').value||'18:00',(document.querySelector('input[name=omCap]:checked')||{}).value||'',kind);
+    view=kind==='예비'?'spare':'main';month=fresh[0].slice(0,7);apply(data);
+    toast((data.added||0)+'개 열었어요'+(kind==='예비'?' (예비 날짜 탭)':''));
+  }catch(err){toast(errMsg(err))}
 }
 $('#omGo').addEventListener('click',()=>{
   const m=$('#omMonth').value;if(!m){toast('달을 골라주세요');return}
