@@ -51,23 +51,6 @@ button.icon{padding:8px 10px;line-height:1}
   background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 12px}
 .who b{color:var(--text);font-weight:500}
 
-/* 첫 화면 모집판 공지 */
-.recruit{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--text);
-  background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--teal);
-  border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;margin-bottom:16px;transition:.15s}
-.recruit[hidden]{display:none}
-.recruit:hover{border-color:var(--line2);border-left-color:var(--teal)}
-.rc-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.rc-tag{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:#fff;background:var(--teal);border-radius:6px;padding:2px 8px}
-.rc-go{margin-left:auto;font-size:13px;font-weight:500;color:var(--teal)}
-.rc-notice{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;line-height:1.65}
-.rc-notice:empty{display:none}
-.rc-slots{display:flex;flex-wrap:wrap;gap:6px}
-.rc-slots:empty{display:none}
-.rc-slot{font-size:12.5px;border:1px solid var(--line);background:var(--surface2);border-radius:999px;padding:3px 10px;color:var(--text2);font-variant-numeric:tabular-nums}
-.rc-slot b{color:var(--text);font-weight:500}
-.rc-slot.hot{border-color:var(--teal);color:var(--teal)}
-
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
 .tab{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;padding:10px 14px;
   color:var(--text3);font-size:14.5px;white-space:nowrap}
@@ -234,11 +217,6 @@ select{width:auto;padding-right:28px}
     </div>
   </header>
 
-  <a class="recruit" id="recruit" href="./board/" hidden>
-    <div class="rc-top"><span class="rc-tag">모집판</span><span class="rc-go">날짜 보고 신청하기 →</span></div>
-    <div class="rc-notice" id="rcNotice"></div>
-    <div class="rc-slots" id="rcSlots"></div>
-  </a>
 
   <div class="tabs" id="tabs">
     <button class="tab on" data-tab="log">작품 목록<span class="n" id="nLog"></span></button>
@@ -936,41 +914,6 @@ function saveRv(g,ed,btn){
 
 /* ---------- go ---------- */
 renderName(); load();
-})();
-</script>
-<script>
-/* 첫 화면 모집판 공지 — 모집판(Apps Script)의 공지와 다가오는 모집 날짜를 가져와 보여줌 */
-(function(){
-"use strict";
-var BOARD_API="https://script.google.com/macros/s/AKfycbxOmB9NEU_c3Dd3XMKJoBGv5gy1TjglbzCkKYUZWMT8l_2qaXWVJcbXe_4r7o2ou8zk/exec";
-var DOW=["일","월","화","수","목","금","토"];
-var box=document.getElementById("recruit");
-if(!box)return;
-function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function pad(n){return ("0"+n).slice(-2);}
-var t=new Date(), today=t.getFullYear()+"-"+pad(t.getMonth()+1)+"-"+pad(t.getDate());
-
-fetch(BOARD_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:"getData",args:[]})})
-  .then(function(r){return r.json();})
-  .then(function(j){
-    if(!j||!j.ok||!j.data)return;
-    var d=j.data, notice=(d.notice||"").trim();
-    var open=(d.slots||[]).filter(function(s){return s.date>=today&&s.status!=="취소";})
-      .sort(function(a,b){return a.date<b.date?-1:1;}).slice(0,4);
-    var chips=open.map(function(s){
-      var n=(d.signups||[]).filter(function(x){return x.date===s.date;}).length;
-      var p=s.date.split("-"), dt=new Date(+p[0],+p[1]-1,+p[2]);
-      var who=s.cap?(Math.min(n,s.cap)+"/"+s.cap+"명"):(n+"명 · 4~9인");
-      var hot=s.cap?(n>0&&n<s.cap):(n>=1);
-      var game=s.game?" "+esc(s.game):(s.cap?" "+s.cap+"인 게임":"");
-      return '<span class="rc-slot'+(hot?' hot':'')+'"><b>'+(+p[1])+'/'+(+p[2])+'('+DOW[dt.getDay()]+')</b>'+game+' · '+who+(s.status==="확정"?" · 확정":"")+'</span>';
-    }).join("");
-    if(!notice&&!chips)return;
-    document.getElementById("rcNotice").textContent=notice;
-    document.getElementById("rcSlots").innerHTML=chips;
-    box.hidden=false;
-  })
-  .catch(function(){ /* 모집판이 안 열리면 조용히 숨김 */ });
 })();
 </script>
 </body>
