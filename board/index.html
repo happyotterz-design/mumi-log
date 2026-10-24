@@ -183,6 +183,9 @@ body.has-bar .toast{bottom:150px}
     <a class="log" href="https://happyotterz-design.github.io/mumi-log/" target="_blank" rel="noopener">머미 로그<span>작품 후기 보기 ↗</span></a>
   </header>
 
+  <div id="featured"></div>
+  <script src="https://happyotterz-design.github.io/mumi-log/events/featured.js"></script>
+
   <section class="notice" id="notice" hidden></section>
 
   <section class="me">
@@ -325,7 +328,7 @@ function apply(data){
   if(!data)return;
   slots=data.slots||[];signups=data.signups||[];notice=data.notice||'';loaded=true;render();
 }
-async function refresh(){try{apply(await call('getData'))}catch(e){if(!loaded)$('#list').innerHTML='<div class="blank">불러오지 못했어요. 새로고침 해주세요.</div>'}}
+async function refresh(){try{apply(await call('getData'))}catch(e){if(!loaded)$('#list').innerHTML=inGas?'<div class="blank">불러오지 못했어요. 새로고침 해주세요.</div>':`<div class="blank">지금 이 주소에서는 날짜를 불러오지 못했어요.<br><a href="${API_URL}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">구글 모집판에서 열기 →</a></div>`}}
 
 /* 이름 기억 */
 const nameEl=$('#myName');
