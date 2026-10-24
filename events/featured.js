@@ -32,6 +32,10 @@
     ".fe-notes{margin:2px 0 0;padding:10px 12px;list-style:none;border-top:1px dashed #e7b54a55;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--fe-mute)}" +
     ".fe-notes li{padding-left:1.3em;text-indent:-1.3em}" +
     ".fe-notes li::before{content:'📌 '}" +
+    ".fe-urgent{grid-column:1/-1;background:var(--fe-red);color:#fff;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start}" +
+    ".fe-urgent b{flex:none;font-size:12px;letter-spacing:.06em;background:#fff;color:var(--fe-red);border-radius:5px;padding:2px 8px;margin-top:2px}" +
+    ".fe-urgent p{margin:0;white-space:pre-wrap;font-size:15px;font-weight:600;line-height:1.55;min-width:0;overflow-wrap:anywhere}" +
+    ".fe-change{display:block;margin-top:2px;font-size:12.5px;font-weight:700;color:var(--fe-red);background:#fff;border-radius:5px;padding:1px 8px;width:fit-content;max-width:100%}" +
     "@media (max-width:560px){.fe{grid-template-columns:1fr;padding:14px}.fe-poster{max-width:260px;justify-self:center}}";
 
   function esc(s) {
@@ -53,6 +57,7 @@
       var done = /완료|마감/.test(e.status || "");
       var html =
         '<section class="fe" aria-label="이번 게임 공지">' +
+        (e.urgent && e.urgent.text ? '<div class="fe-urgent" role="note"><b>' + esc(e.urgent.title || "긴급 공지") + "</b><p>" + esc(e.urgent.text) + "</p></div>" : "") +
         (poster ? '<a class="fe-poster" href="' + esc(poster) + '" target="_blank" rel="noopener"><img src="' + esc(poster) + '" alt="' + esc(e.title) + ' 포스터"></a>' : "") +
         '<div class="fe-body">' +
         '<div class="fe-top">' + (e.status ? '<span class="fe-badge' + (done ? "" : " open") + '">' + esc(e.status) + (e.cap ? " · " + people.length + "/" + e.cap + "인" : "") + "</span>" : "") +
@@ -61,7 +66,7 @@
         (e.intro ? '<p class="fe-intro">' + esc(e.intro) + "</p>" : "") +
         '<dl class="fe-facts">' +
         (e.date ? "<dt>일시</dt><dd>" + esc(e.date) + (e.time ? " " + esc(e.time) : "") + "</dd>" : "") +
-        (e.place ? "<dt>장소</dt><dd>" + esc(e.place) + "</dd>" : "") +
+        (e.place ? "<dt>장소</dt><dd>" + esc(e.place) + (e.placeNote ? '<span class="fe-change">' + esc(e.placeNote) + "</span>" : "") + "</dd>" : "") +
         (people.length ? "<dt>참석자</dt><dd><div class=\"fe-people\">" + people.map(function (p) { return "<span>" + esc(p) + "</span>"; }).join("") + "</div></dd>" : "") +
         "</dl>" +
         ((e.notes || []).length ? '<ul class="fe-notes">' + e.notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "") +
