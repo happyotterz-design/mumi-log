@@ -359,6 +359,10 @@ function diffN(g){return rvOf(g).filter(function(r){return r.difficulty>0;}).len
 function gameById(id){return data.games.filter(function(g){return g.id===id;})[0];}
 function pplText(g){if(!g.minP&&!g.maxP)return"";var a=g.minP||g.maxP,b=g.maxP||g.minP;return a===b?a+"명":a+"~"+b+"명";}
 function ownersOf(g){return String(g.owner||"").split(",").map(function(s){return s.trim();}).filter(Boolean);}
+/* 내 것 / 남의 집 구분: 보유자에 아래 이름이 있으면 내 것 (보유자 칸이 비어 있어도 내 것으로 봄) */
+var ME_NAMES=["장인형","인형"];
+function isMine(g){var os=ownersOf(g);return !os.length||os.some(function(o){return ME_NAMES.indexOf(o)>=0;});}
+function isOthers(g){return !!g.owned&&!isMine(g);}
 function extAvg(g){var a=[];if(g.extMml)a.push(g.extMml);if(g.extMdms)a.push(g.extMdms);
   return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:0;}
 
@@ -392,7 +396,8 @@ document.querySelectorAll(".tab").forEach(function(t){
   t.onclick=function(){
     document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on");});
     t.classList.add("on");tab=t.dataset.tab;
-    $("ownChips").style.display=tab==="own"?"flex":"none";
+    $("ownChips").style.display=(tab==="own"||tab==="others")?"flex":"none";
+    filters.owner="";
     $("toolbar").style.display=tab==="people"?"none":"flex";
     renderAll();};
 });
@@ -410,8 +415,12 @@ function ownerList(){
   return Object.keys(m).sort(function(a,b){return m[b]-m[a];}).map(function(k){return {name:k,n:m[k]};});
 }
 function renderOwnChips(){
-  var owners=ownerList();
-  var lent=data.games.filter(function(g){return g.owned&&g.lentTo;}).length;
+  if(tab!=="own"&&tab!=="others"){$("ownChips").innerHTML="";return;}
+  var list=tabGames(tab), m={};
+  list.forEach(function(g){ownersOf(g).forEach(function(o){if(tab==="others"&&ME_NAMES.indexOf(o)>=0)return;m[o]=(m[o]||0)+1;});});
+  var owners=Object.keys(m).sort(function(a,b){return m[b]-m[a];}).map(function(k){return {name:k,n:m[k]};});
+  if(tab==="own") owners=[];
+  var lent=list.filter(function(g){return g.lentTo;}).length;
   if(!owners.length&&!lent){$("ownChips").innerHTML="";return;}
   $("ownChips").innerHTML='<button class="chip'+(filters.owner?"":" on")+'" data-owner="">전체</button>'+
     owners.map(function(o){
@@ -425,7 +434,8 @@ function renderOwnChips(){
 function tabGames(t){
   return data.games.filter(function(g){
     if(t==="log")return true;
-    if(t==="own")return !!g.owned;
+    if(t==="own")return !!g.owned&&isMine(g);
+    if(t==="others")return isOthers(g);
     return g.status===t;});
 }
 function renderCounts(){
@@ -570,7 +580,7 @@ function renderList(){
   if(!loaded){$("list").innerHTML='<div class="empty"><div class="big">🕯️</div>불러오는 중…</div>';return;}
   if(tab==="people"){renderPeople();return;}
   var out=tabGames(tab).slice();
-  if(tab==="own"&&filters.owner){
+  if((tab==="own"||tab==="others")&&filters.owner){
     out=filters.owner==="__lent"
       ? out.filter(function(g){return !!g.lentTo;})
       : out.filter(function(g){return ownersOf(g).indexOf(filters.owner)>=0;});
@@ -595,10 +605,10 @@ function renderList(){
   if(!out.length){
     var msg=data.games.length
       ?(tab==="own"?"보유 중인 작품이 없어. 작품 추가할 때 '소장 중' 체크하면 여기 모여."
+        :tab==="others"?"남의 집 머미가 없어. '소장 중' 체크하고 보유자에 다른 사람 이름을 적으면 여기 모여."
         :tab==="toplay"?"'해보고 싶다'로 표시한 작품이 없어."
         :tab==="tobuy"?"'갖고 싶다'로 표시한 작품이 없어."
         :tab==="planbuy"?"'구매 예정'으로 표시한 작품이 없어. 펀딩 참여했거나 살 예정인 작품을 여기 모아봐!"
-        :tab==="others"?"'남의 집 머미'로 표시한 작품이 없어. 다른 사람이 갖고 있는 작품을 소유자 이름이랑 같이 적어둬!"
         :"조건에 맞는 작품이 없어.")
       :"아직 기록이 없어. 오른쪽 위 <b>+ 작품 추가</b>로 첫 작품을 올려봐!";
     $("list").innerHTML='<div class="empty"><div class="big">🕯️</div>'+msg+'</div>';return;
@@ -616,12 +626,11 @@ function renderList(){
       (g.image?'<img class="thumb" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
       '<div class="main">'+
       '<div class="ttl"><h3 class="serif">'+esc(g.title)+'</h3>'+
-        (g.owned?'<span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':"")+
+        (g.owned?(isMine(g)?'<span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':'<span class="badge others">🏠 '+esc(ownersOf(g).join('·'))+'네 집</span>'):"")+
         (g.lentTo?'<span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
         (g.status==="toplay"?'<span class="badge toplay">해보고싶다</span>':"")+
         (g.status==="tobuy"?'<span class="badge tobuy">갖고싶다</span>':"")+
         (g.status==="planbuy"?'<span class="badge planbuy">구매예정</span>':"")+
-        (g.status==="others"?'<span class="badge others">🏠 '+(g.owner?esc(g.owner)+'네 집':'남의 집')+'</span>':"")+
         (g.gm?'<span class="badge">GM 필요</span>':"")+
       '</div>'+
       '<div class="meta">'+(pplText(g)?'<span>👤 '+pplText(g)+'</span>':"")+
@@ -676,8 +685,8 @@ function wireStar(id,onChange){
 /* ---------- game form ---------- */
 function gameForm(g){
   g=g||{};
-  var st=g.status||((tab==="toplay"||tab==="tobuy"||tab==="planbuy"||tab==="others")?tab:"played");
-  var owned=g.id?!!g.owned:(tab==="own");
+  var st=g.status||((tab==="toplay"||tab==="tobuy"||tab==="planbuy")?tab:"played");
+  var owned=g.id?!!g.owned:(tab==="own"||tab==="others");
   return '<div class="head"><h2 class="serif">'+(g.id?"작품 수정":"작품 추가")+'</h2><button class="ghost icon" data-close>✕</button></div>'+
   '<div class="body">'+
     '<div class="field"><label>작품 사진</label>'+
@@ -705,16 +714,11 @@ function gameForm(g){
         '<option value="played"'+(st==="played"?" selected":"")+'>없음 (그냥 목록에)</option>'+
         '<option value="toplay"'+(st==="toplay"?" selected":"")+'>해보고 싶다</option>'+
         '<option value="tobuy"'+(st==="tobuy"?" selected":"")+'>갖고 싶다</option>'+
-        '<option value="planbuy"'+(st==="planbuy"?" selected":"")+'>구매 예정 (펀딩 등)</option>'+
-        '<option value="others"'+(st==="others"?" selected":"")+'>남의 집 머미</option></select></div>'+
+        '<option value="planbuy"'+(st==="planbuy"?" selected":"")+'>구매 예정 (펀딩 등)</option></select></div>'+
       '<div class="field"><label>GM</label><select id="gGm">'+
         '<option value="0"'+(!g.gm?" selected":"")+'>필요 없음</option><option value="1"'+(g.gm?" selected":"")+'>GM 필요</option></select></div>'+
     '</div>'+
     '<div class="hint" style="margin:-6px 0 12px">난이도는 후기 쓰는 사람들이 각자 매기고 평균으로 표시돼. 모든 작품에 후기를 달 수 있어 — 아직 안 해본 작품도 괜찮아.</div>'+
-    '<div class="field" id="gHostWrap" style="'+(st==="others"?"":"display:none")+'"><label>🏠 소유자 — 누구네 집에 있어? (여러 명이면 쉼표로)</label>'+
-      '<input type="text" id="gHost" value="'+esc(st==="others"?(g.owner||""):"")+'" placeholder="예) 지민, 동아리방">'+
-      '<div class="hint">카드에 "🏠 OO네 집"으로 보여. 빌리고 싶을 때 누구한테 말하면 되는지 바로 알 수 있어.</div></div>'+
-    '<div id="gOwnBlock" style="'+(st==="others"?"display:none":"")+'">'+
     '<label class="chkline"><input type="checkbox" id="gOwned"'+(owned?" checked":"")+'> 소장 중 (보유 작품 탭에 표시)</label>'+
     '<div class="field"><label>보유자 — 누가 갖고 있어? (여러 명이면 쉼표로)</label>'+
       '<div class="row"><input type="text" id="gOwner" list="ownerList" value="'+esc(g.owner||"")+'" placeholder="예) 인형, 수경">'+
@@ -725,7 +729,6 @@ function gameForm(g){
     '<div class="field" id="gLentWrap" style="'+(g.lentTo?"":"display:none")+'">'+
       '<input type="text" id="gLent" value="'+esc(g.lentTo==="대여 중"?"":(g.lentTo||""))+'" placeholder="누가 빌려갔어? (안 적어도 돼)">'+
       '<div class="hint">돌려받으면 체크를 풀어줘.</div></div>'+
-    '</div>'+
     '<div class="field"><label>태그 (쉼표로 구분)</label><input type="text" id="gTags" value="'+esc((g.tags||[]).join(", "))+'" placeholder="본격추리, 감동, 하드, 밀담많음"></div>'+
 
     '<div class="sectitle">외부 평점 (안 적으면 미정)</div>'+
@@ -788,12 +791,6 @@ function openGameForm(g){
     });
   };
 
-  $("gStatus").onchange=function(){
-    var o=this.value==="others";
-    $("gHostWrap").style.display=o?"block":"none";
-    $("gOwnBlock").style.display=o?"none":"block";
-    if(o) $("gHost").focus();
-  };
   $("gLentChk").onchange=function(){
     $("gLentWrap").style.display=this.checked?"block":"none";
     if(this.checked) $("gLent").focus();
@@ -811,11 +808,10 @@ function openGameForm(g){
       id:g?g.id:"", createdAt:g?g.createdAt:0, title:t,
       minP:+$("gMin").value||0, maxP:+$("gMax").value||0,
       playtime:+$("gTime").value||0, difficulty:0,
-      status:$("gStatus").value, gm:$("gGm").value==="1",
-      owned:$("gStatus").value==="others"?false:$("gOwned").checked,
-      owner:$("gStatus").value==="others"?$("gHost").value.trim():$("gOwner").value.trim(),
+      status:$("gStatus").value, gm:$("gGm").value==="1", owned:$("gOwned").checked,
+      owner:$("gOwner").value.trim(),
       image:$("gImg").value.trim(),
-      lentTo:($("gStatus").value!=="others"&&$("gLentChk").checked)?($("gLent").value.trim()||"대여 중"):"",
+      lentTo:$("gLentChk").checked?($("gLent").value.trim()||"대여 중"):"",
       tags:$("gTags").value.split(",").map(function(s){return s.trim();}).filter(Boolean).slice(0,8).join(", "),
       note:$("gNote").value.trim(),
       extMml:+$("gMml").value||0, extMdms:+$("gMdms").value||0,
@@ -850,12 +846,11 @@ function renderModalGame(){
 
   $("modal").innerHTML=
   '<div class="head"><h2 class="serif">'+esc(g.title)+
-    (g.owned?' <span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':"")+
+    (g.owned?(isMine(g)?' <span class="badge own">'+(ownersOf(g).length?esc(ownersOf(g).join('·'))+' 소장':'소장')+'</span>':' <span class="badge others">🏠 '+esc(ownersOf(g).join('·'))+'네 집</span>'):"")+
     (g.lentTo?' <span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
     (g.status==="toplay"?' <span class="badge toplay">해보고싶다</span>':"")+
     (g.status==="tobuy"?' <span class="badge tobuy">갖고싶다</span>':"")+
     (g.status==="planbuy"?' <span class="badge planbuy">구매예정</span>':"")+
-    (g.status==="others"?' <span class="badge others">🏠 '+(g.owner?esc(g.owner)+'네 집':'남의 집')+'</span>':"")+
   '</h2><button class="ghost icon" id="gEdit" title="작품 정보 수정">✎</button><button class="ghost icon" data-close>✕</button></div>'+
   '<div class="body">'+
     (g.image?'<img class="cover" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
