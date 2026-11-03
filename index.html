@@ -359,6 +359,16 @@ function diffOf(g){var rs=rvOf(g).filter(function(r){return r.difficulty>0;});if
 function diffN(g){return rvOf(g).filter(function(r){return r.difficulty>0;}).length;}
 function gameById(id){return data.games.filter(function(g){return g.id===id;})[0];}
 function pplText(g){if(!g.minP&&!g.maxP)return"";var a=g.minP||g.maxP,b=g.maxP||g.minP;return a===b?a+"명":a+"~"+b+"명";}
+/* 구매 예정 배송일: "2026-11-20" → "📦 11/20 도착 · D-3" / 비어 있으면 "📦 배송일 미정" */
+function delivLabel(g){
+  var d=String(g.deliveryAt||"");
+  var m=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return "📦 배송일 미정";
+  var t=new Date(+m[1],+m[2]-1,+m[3]),n=new Date();n=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+  var dd=Math.round((t-n)/864e5);
+  return "📦 "+(+m[2])+"/"+(+m[3])+" 도착 · "+(dd>0?"D-"+dd:dd===0?"오늘!":"도착했나요?");
+}
+function delivKey(g){var d=String(g.deliveryAt||"");return /^\d{4}-\d{2}-\d{2}$/.test(d)?d:"9999";}
 function ownersOf(g){return String(g.owner||"").split(",").map(function(s){return s.trim();}).filter(Boolean);}
 /* 내 것 / 남의 집 구분: 보유자에 아래 이름이 있으면 내 것 (보유자 칸이 비어 있어도 내 것으로 봄) */
 var ME_NAMES=["장인형","인형"];
@@ -594,6 +604,7 @@ function renderList(){
           || (g.tags||[]).join(" ").toLowerCase().indexOf(q)>=0
           || String(g.owner||"").toLowerCase().indexOf(q)>=0;});}
   out.sort(function(a,b){
+    if(tab==="planbuy"&&filters.sort==="rating"){var ka=delivKey(a),kb=delivKey(b);if(ka!==kb)return ka<kb?-1:1;}
     switch(filters.sort){
       case "recent":return (b.createdAt||0)-(a.createdAt||0);
       case "reviews":return rvOf(b.id).length-rvOf(a.id).length;
@@ -631,7 +642,7 @@ function renderList(){
         (g.lentTo?'<span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
         (g.status==="toplay"?'<span class="badge toplay">해보고싶다</span>':"")+
         (g.status==="tobuy"?'<span class="badge tobuy">갖고싶다</span>':"")+
-        (g.status==="planbuy"?'<span class="badge planbuy">구매예정</span>':"")+
+        (g.status==="planbuy"?'<span class="badge planbuy">'+esc(delivLabel(g))+'</span>':"")+
         (g.gm?'<span class="badge">GM 필요</span>':"")+
       '</div>'+
       '<div class="meta">'+(pplText(g)?'<span>👤 '+pplText(g)+'</span>':"")+
@@ -719,6 +730,10 @@ function gameForm(g){
       '<div class="field"><label>GM</label><select id="gGm">'+
         '<option value="0"'+(!g.gm?" selected":"")+'>필요 없음</option><option value="1"'+(g.gm?" selected":"")+'>GM 필요</option></select></div>'+
     '</div>'+
+    '<div class="field" id="gDelivWrap" style="'+(st==="planbuy"?"":"display:none")+'"><label>📦 배송 받을 날짜</label>'+
+      '<div class="row"><input type="date" id="gDeliv" value="'+esc(/^\d{4}-\d{2}-\d{2}$/.test(String(g.deliveryAt||""))?g.deliveryAt:"")+'">'+
+      '<button style="flex:0 0 auto" id="gDelivClear">미정</button></div>'+
+      '<div class="hint">아직 모르면 비워둬. \'배송일 미정\'으로 보이고, 날짜가 정해지면 그때 넣으면 돼.</div></div>'+
     '<div class="hint" style="margin:-6px 0 12px">난이도는 후기 쓰는 사람들이 각자 매기고 평균으로 표시돼. 모든 작품에 후기를 달 수 있어 — 아직 안 해본 작품도 괜찮아.</div>'+
     '<label class="chkline"><input type="checkbox" id="gOwned"'+(owned?" checked":"")+'> 소장 중 (보유 작품 탭에 표시)</label>'+
     '<div class="field"><label>보유자 — 누가 갖고 있어? (여러 명이면 쉼표로)</label>'+
@@ -807,6 +822,11 @@ function openGameForm(g){
   box.ondrop=function(e){e.preventDefault();box.classList.remove("drop");
     var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)uploadFile(f);};
 
+  $("gStatus").onchange=function(){
+    var pb=this.value==="planbuy";
+    $("gDelivWrap").style.display=pb?"block":"none";
+  };
+  $("gDelivClear").onclick=function(){$("gDeliv").value="";};
   $("gLentChk").onchange=function(){
     $("gLentWrap").style.display=this.checked?"block":"none";
     if(this.checked) $("gLent").focus();
@@ -825,6 +845,7 @@ function openGameForm(g){
       minP:+$("gMin").value||0, maxP:+$("gMax").value||0,
       playtime:+$("gTime").value||0, difficulty:0,
       status:$("gStatus").value, gm:$("gGm").value==="1", owned:$("gOwned").checked,
+      deliveryAt:$("gStatus").value==="planbuy"?$("gDeliv").value:"",
       owner:$("gOwner").value.trim(),
       image:$("gImg").value.trim(),
       lentTo:$("gLentChk").checked?($("gLent").value.trim()||"대여 중"):"",
@@ -866,7 +887,7 @@ function renderModalGame(){
     (g.lentTo?' <span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
     (g.status==="toplay"?' <span class="badge toplay">해보고싶다</span>':"")+
     (g.status==="tobuy"?' <span class="badge tobuy">갖고싶다</span>':"")+
-    (g.status==="planbuy"?' <span class="badge planbuy">구매예정</span>':"")+
+    (g.status==="planbuy"?' <span class="badge planbuy">'+esc(delivLabel(g))+'</span>':"")+
   '</h2><button class="ghost icon" id="gEdit" title="작품 정보 수정">✎</button><button class="ghost icon" data-close>✕</button></div>'+
   '<div class="body">'+
     (g.image?'<img class="cover" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
