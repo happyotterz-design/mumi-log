@@ -87,6 +87,7 @@ select{width:auto;padding-right:28px}
 .cover{display:block;margin:0 auto 14px;max-width:100%;max-height:320px;width:auto;height:auto;
   object-fit:contain;border-radius:12px}
 .imgbox{display:flex;gap:12px;align-items:center}
+.imgbox.drop{outline:2px dashed var(--accent);outline-offset:4px;border-radius:12px}
 .imgbox img{width:86px;height:86px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:var(--surface2)}
 .imgbox .side{flex:1}
 .ttl{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
@@ -698,7 +699,7 @@ function gameForm(g){
             '<button id="gImgClear" style="'+(g.image?"":"display:none")+'">빼기</button>'+
           '</div>'+
           '<input type="text" id="gImg" value="'+esc(g.image||"")+'" placeholder="또는 이미지 주소 붙여넣기" style="margin-top:7px">'+
-          '<div class="hint" id="gImgMsg">없어도 돼. 박스 사진 찍어서 올려도 되고!</div>'+
+          '<div class="hint" id="gImgMsg">없어도 돼. 박스 사진 찍어서 올려도 되고! PC에선 캡처하고 <b>Ctrl+V</b>로 붙여넣거나, 사진을 여기로 끌어다 놔도 돼.</div>'+
         '</div>'+
       '</div>'+
       '<input type="file" id="gFile" accept="image/*" style="display:none">'+
@@ -776,8 +777,9 @@ function openGameForm(g){
   $("gImgBtn").onclick=function(){$("gFile").click();};
   $("gImgClear").onclick=function(){showImg("");};
   $("gImg").onchange=function(){showImg(this.value.trim());};
-  $("gFile").onchange=function(){
-    var f=this.files[0];this.value="";if(!f)return;
+  function uploadFile(f){
+    if(!f||!/^image\//.test(f.type||"")){$("gImgMsg").textContent="사진 파일만 올릴 수 있어!";return;}
+    if($("gImgBtn").disabled)return;
     $("gImgMsg").textContent="올리는 중… (사진 크기에 따라 몇 초 걸려)";
     $("gImgBtn").disabled=true;
     resizeImage(f,1000,function(b64){
@@ -789,7 +791,21 @@ function openGameForm(g){
           else{$("gImgMsg").textContent=(res&&res.msg)||"업로드 실패 😢";}
         }).catch(function(e){$("gImgBtn").disabled=false;$("gImgMsg").textContent="업로드 실패 😢";});
     });
+  }
+  $("gFile").onchange=function(){var f=this.files[0];this.value="";if(f)uploadFile(f);};
+  /* PC: 캡처 후 Ctrl+V 붙여넣기 · 사진 끌어다 놓기 */
+  $("modal").onpaste=function(e){
+    if(!$("gImgBtn"))return;
+    var items=(e.clipboardData&&e.clipboardData.items)||[];
+    for(var i=0;i<items.length;i++){
+      if(items[i].kind==="file"&&/^image\//.test(items[i].type)){e.preventDefault();uploadFile(items[i].getAsFile());return;}
+    }
   };
+  var box=document.querySelector("#modal .imgbox");
+  box.ondragover=function(e){e.preventDefault();box.classList.add("drop");};
+  box.ondragleave=function(){box.classList.remove("drop");};
+  box.ondrop=function(e){e.preventDefault();box.classList.remove("drop");
+    var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)uploadFile(f);};
 
   $("gLentChk").onchange=function(){
     $("gLentWrap").style.display=this.checked?"block":"none";
