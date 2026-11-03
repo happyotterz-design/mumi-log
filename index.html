@@ -95,6 +95,7 @@ select{width:auto;padding-right:28px}
 .badge.own{color:var(--teal);border-color:var(--teal)}
 .badge.toplay{color:var(--gold);border-color:var(--gold)}
 .badge.tobuy{color:var(--accent);border-color:var(--accent)}
+.badge.planbuy{color:var(--teal);border-color:var(--teal)}
 .badge.lent{color:#fff;background:var(--accent);border-color:var(--accent)}
 .meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text2);font-size:12.5px;margin-top:4px}
 .ext{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;color:var(--text3)}
@@ -254,6 +255,7 @@ select{width:auto;padding-right:28px}
     <button class="tab" data-tab="own">보유 작품<span class="n" id="nOwn"></span></button>
     <button class="tab" data-tab="toplay">해보고 싶다<span class="n" id="nToplay"></span></button>
     <button class="tab" data-tab="tobuy">갖고 싶다<span class="n" id="nTobuy"></span></button>
+    <button class="tab" data-tab="planbuy">구매 예정<span class="n" id="nPlanbuy"></span></button>
     <button class="tab" data-tab="people">사람들<span class="n" id="nPeople"></span></button>
   </div>
 
@@ -429,6 +431,7 @@ function renderCounts(){
   $("nOwn").textContent=tabGames("own").length;
   $("nToplay").textContent=tabGames("toplay").length;
   $("nTobuy").textContent=tabGames("tobuy").length;
+  $("nPlanbuy").textContent=tabGames("planbuy").length;
   $("nPeople").textContent=people().length;
 }
 function renderStats(){
@@ -591,6 +594,7 @@ function renderList(){
       ?(tab==="own"?"보유 중인 작품이 없어. 작품 추가할 때 '소장 중' 체크하면 여기 모여."
         :tab==="toplay"?"'해보고 싶다'로 표시한 작품이 없어."
         :tab==="tobuy"?"'갖고 싶다'로 표시한 작품이 없어."
+        :tab==="planbuy"?"'구매 예정'으로 표시한 작품이 없어. 펀딩 참여했거나 살 예정인 작품을 여기 모아봐!"
         :"조건에 맞는 작품이 없어.")
       :"아직 기록이 없어. 오른쪽 위 <b>+ 작품 추가</b>로 첫 작품을 올려봐!";
     $("list").innerHTML='<div class="empty"><div class="big">🕯️</div>'+msg+'</div>';return;
@@ -612,6 +616,7 @@ function renderList(){
         (g.lentTo?'<span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
         (g.status==="toplay"?'<span class="badge toplay">해보고싶다</span>':"")+
         (g.status==="tobuy"?'<span class="badge tobuy">갖고싶다</span>':"")+
+        (g.status==="planbuy"?'<span class="badge planbuy">구매예정</span>':"")+
         (g.gm?'<span class="badge">GM 필요</span>':"")+
       '</div>'+
       '<div class="meta">'+(pplText(g)?'<span>👤 '+pplText(g)+'</span>':"")+
@@ -666,7 +671,7 @@ function wireStar(id,onChange){
 /* ---------- game form ---------- */
 function gameForm(g){
   g=g||{};
-  var st=g.status||((tab==="toplay"||tab==="tobuy")?tab:"played");
+  var st=g.status||((tab==="toplay"||tab==="tobuy"||tab==="planbuy")?tab:"played");
   var owned=g.id?!!g.owned:(tab==="own");
   return '<div class="head"><h2 class="serif">'+(g.id?"작품 수정":"작품 추가")+'</h2><button class="ghost icon" data-close>✕</button></div>'+
   '<div class="body">'+
@@ -694,7 +699,8 @@ function gameForm(g){
       '<div class="field"><label>위시 상태</label><select id="gStatus">'+
         '<option value="played"'+(st==="played"?" selected":"")+'>없음 (그냥 목록에)</option>'+
         '<option value="toplay"'+(st==="toplay"?" selected":"")+'>해보고 싶다</option>'+
-        '<option value="tobuy"'+(st==="tobuy"?" selected":"")+'>갖고 싶다</option></select></div>'+
+        '<option value="tobuy"'+(st==="tobuy"?" selected":"")+'>갖고 싶다</option>'+
+        '<option value="planbuy"'+(st==="planbuy"?" selected":"")+'>구매 예정 (펀딩 등)</option></select></div>'+
       '<div class="field"><label>GM</label><select id="gGm">'+
         '<option value="0"'+(!g.gm?" selected":"")+'>필요 없음</option><option value="1"'+(g.gm?" selected":"")+'>GM 필요</option></select></div>'+
     '</div>'+
@@ -830,6 +836,7 @@ function renderModalGame(){
     (g.lentTo?' <span class="badge lent">🚚 '+(g.lentTo==="대여 중"?"대여 중":esc(g.lentTo)+' 대여 중')+'</span>':"")+
     (g.status==="toplay"?' <span class="badge toplay">해보고싶다</span>':"")+
     (g.status==="tobuy"?' <span class="badge tobuy">갖고싶다</span>':"")+
+    (g.status==="planbuy"?' <span class="badge planbuy">구매예정</span>':"")+
   '</h2><button class="ghost icon" id="gEdit" title="작품 정보 수정">✎</button><button class="ghost icon" data-close>✕</button></div>'+
   '<div class="body">'+
     (g.image?'<img class="cover" src="'+esc(g.image)+'" alt="" onerror="this.style.display=\'none\'">':"")+
