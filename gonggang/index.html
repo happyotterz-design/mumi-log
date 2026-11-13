@@ -401,7 +401,7 @@
 
   <div class="card tt-common-card" id="commonTimetableCard" style="display:none;">
     <h2>🗓️ 선택한 선생님 공통 시간표</h2>
-    <div class="subtitle" style="margin-bottom:12px;">연두색이 선택한 선생님 전원이 공강인 시간이에요. 다른 색 칸에는 누가 수업 중인지 표시했어요. 칸을 누르면 전체 8명 중 그 시간에 공강인 사람도 확인할 수 있어요.</div>
+    <div class="subtitle" style="margin-bottom:12px;">연두색이 선택한 선생님 전원이 공강인 시간이에요. 다른 색 칸에는 누가 수업 중인지 표시했어요. 칸을 누르면 전체 8명 중 그 시간에 공강인 사람도 확인할 수 있어요. (월·금 7교시는 공강으로 포함)</div>
     <div class="tt-scroll" id="commonTimetableWrap"></div>
   </div>
 
@@ -416,7 +416,7 @@
 
   <div class="tt-section">
     <h2>📋 전체 시간표</h2>
-    <div class="subtitle">참고용으로 아래 각 선생님의 전체 시간표를 확인할 수 있어요. (연두색 = 공강, 월요일·금요일 7교시는 학교에 아예 없는 시간이라 회색 "없음"으로 표시했어요. 2026학년도 2학기 전체 강의실 시간표 기준)</div>
+    <div class="subtitle">참고용으로 아래 각 선생님의 전체 시간표를 확인할 수 있어요. (연두색 = 공강. 2026학년도 2학기 전체 강의실 시간표 기준이며, 월·금 7교시는 공식 운영 교시는 아니지만 공강으로 포함했어요)</div>
     <div class="tt-grid" id="ttGrid"></div>
   </div>
 
@@ -436,63 +436,64 @@
 const DAYS = ["월","화","수","목","금"];
 const PERIODS = [1,2,3,4,5,6,7];
 
-// null = 공강, "NA" = 시간표에 없는 교시(월요일·금요일 7교시는 아예 존재하지 않음), 문자열 = 수업중
+// null = 공강, "NA" = 시간표에 없는 교시, 문자열 = 수업중
+// 참고: 월/금 7교시는 학교 마스터 시간표상 운영되는 교시는 아니지만, 사용자 요청으로 공강(null) 처리함
 const DATA = {
   "장인형": {
-    "월": {1:null,2:"여지",3:"미래사회",4:"여지",5:null,6:null,7:"NA"},
+    "월": {1:null,2:"여지",3:"미래사회",4:"여지",5:null,6:null,7:null},
     "화": {1:"여지",2:null,3:null,4:null,5:null,6:null,7:"미래사회"},
     "수": {1:null,2:"여지",3:null,4:null,5:null,6:null,7:null},
     "목": {1:null,2:"여지",3:"미래사회",4:null,5:null,6:"여지",7:"여지"},
-    "금": {1:null,2:"여지",3:null,4:null,5:"창체",6:"창체",7:"NA"}
+    "금": {1:null,2:"여지",3:null,4:null,5:"창체",6:"창체",7:null}
   },
   "김수경": {
-    "월": {1:null,2:"생윤",3:"공캠",4:null,5:null,6:null,7:"NA"},
+    "월": {1:null,2:"생윤",3:"공캠",4:null,5:null,6:null,7:null},
     "화": {1:"생윤",2:"생윤",3:null,4:null,5:null,6:null,7:"공캠"},
     "수": {1:null,2:"생윤",3:null,4:null,5:null,6:null,7:null},
     "목": {1:null,2:null,3:"공캠",4:null,5:null,6:null,7:null},
-    "금": {1:null,2:"생윤",3:null,4:"생윤",5:"창체",6:"창체",7:"NA"}
+    "금": {1:null,2:"생윤",3:null,4:"생윤",5:"창체",6:"창체",7:null}
   },
   "황정은": {
-    "월": {1:null,2:"사문탐",3:"사문탐",4:null,5:null,6:"사문탐",7:"NA"},
+    "월": {1:null,2:"사문탐",3:"사문탐",4:null,5:null,6:"사문탐",7:null},
     "화": {1:"사문탐",2:"사문탐",3:null,4:"사문탐",5:null,6:null,7:"사문탐"},
     "수": {1:null,2:"사문탐",3:null,4:null,5:"사문탐",6:null,7:null},
     "목": {1:"사문탐",2:null,3:"사문탐",4:null,5:null,6:"사문탐",7:"사문탐"},
-    "금": {1:null,2:"사문탐",3:null,4:"사문탐",5:"창체",6:"창체",7:"NA"}
+    "금": {1:null,2:"사문탐",3:null,4:"사문탐",5:"창체",6:"창체",7:null}
   },
   "이철희": {
-    "월": {1:"미적분",2:null,3:null,4:null,5:"미적분",6:null,7:"NA"},
+    "월": {1:"미적분",2:null,3:null,4:null,5:"미적분",6:null,7:null},
     "화": {1:null,2:"기하",3:"미적분",4:null,5:"미적분",6:"미적분",7:null},
     "수": {1:"미적분",2:null,3:"미적분",4:"미적분",5:null,6:null,7:null},
     "목": {1:"기하",2:"미적분",3:null,4:"미적분",5:null,6:"기하",7:null},
-    "금": {1:"미적분",2:null,3:"미적분",4:null,5:"창체",6:"창체",7:"NA"}
+    "금": {1:"미적분",2:null,3:"미적분",4:null,5:"창체",6:"창체",7:null}
   },
   "김연경": {
-    "월": {1:null,2:null,3:"과학D",4:null,5:null,6:"지구",7:"NA"},
+    "월": {1:null,2:null,3:"과학D",4:null,5:null,6:"지구",7:null},
     "화": {1:null,2:"과학D",3:null,4:"지구",5:null,6:"과학D",7:"과학D"},
     "수": {1:"지2",2:null,3:null,4:"과학D",5:null,6:null,7:"과학D"},
     "목": {1:"지구",2:null,3:"과학D",4:"지2",5:null,6:null,7:null},
-    "금": {1:"과학D",2:null,3:"과학D",4:null,5:"창체",6:"창체",7:"NA"}
+    "금": {1:"과학D",2:null,3:"과학D",4:null,5:"창체",6:"창체",7:null}
   },
   "김수연": {
-    "월": {1:"환경",2:"동아리",3:null,4:"물2",5:"(자율)",6:"역학",7:"NA"},
+    "월": {1:"환경",2:"동아리",3:null,4:"물2",5:"(자율)",6:"역학",7:null},
     "화": {1:null,2:"역학",3:null,4:"역학",5:null,6:null,7:null},
     "수": {1:null,2:null,3:"환경",4:null,5:"역학",6:null,7:null},
     "목": {1:"역학",2:"물2",3:null,4:null,5:null,6:null,7:null},
-    "금": {1:null,2:null,3:null,4:"역학",5:"창체",6:"창체",7:"NA"}
+    "금": {1:null,2:null,3:null,4:"역학",5:"창체",6:"창체",7:null}
   },
   "반소연": {
-    "월": {1:null,2:"음악",3:"음감비",4:null,5:"음악",6:null,7:"NA"},
+    "월": {1:null,2:"음악",3:"음감비",4:null,5:"음악",6:null,7:null},
     "화": {1:null,2:null,3:"음악",4:"음악",5:null,6:null,7:"음감비"},
     "수": {1:null,2:"음악",3:null,4:"음악",5:null,6:null,7:null},
     "목": {1:"음악",2:null,3:"음감비",4:null,5:"음악",6:null,7:null},
-    "금": {1:"음악",2:"음악",3:null,4:null,5:"창체",6:"창체",7:"NA"}
+    "금": {1:"음악",2:"음악",3:null,4:null,5:"창체",6:"창체",7:null}
   },
   "송숙영": {
-    "월": {1:null,2:null,3:"체육",4:null,5:"체육",6:null,7:"NA"},
+    "월": {1:null,2:null,3:"체육",4:null,5:"체육",6:null,7:null},
     "화": {1:"체육",2:null,3:"체육",4:"체육",5:null,6:null,7:null},
     "수": {1:null,2:null,3:"체육",4:null,5:null,6:"체육",7:null},
     "목": {1:"체육",2:"체육",3:null,4:null,5:null,6:null,7:null},
-    "금": {1:null,2:null,3:"체육",4:null,5:"창체",6:"창체",7:"NA"}
+    "금": {1:null,2:null,3:"체육",4:null,5:"창체",6:"창체",7:null}
   }
 };
 
@@ -572,7 +573,7 @@ function computeCommonFree(teachers) {
   DAYS.forEach(day => {
     const periods = [];
     PERIODS.forEach(p => {
-      // 금요일 7교시는 시간표에 존재하지 않으므로 항상 제외
+      // "NA"로 표시된(실제로 없는) 교시만 제외
       if (isNA(teachers[0], day, p)) return;
       const allFree = teachers.every(t => isFree(t, day, p));
       if (allFree) periods.push(p);
