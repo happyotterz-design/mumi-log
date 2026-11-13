@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>선생님 공강 비교기</title>
+<style>
+  :root {
+    --bg: #f7f5fb;
+    --card-bg: #ffffff;
+    --text: #241f2e;
+    --text-dim: #6b6478;
+    --border: #e4dff0;
+    --accent: #8b5cf6;
+    --accent-dark: #6d28d9;
+    --accent-soft: #f1eafb;
+    --free: #d7f5e3;
+    --free-text: #157347;
+    --busy: #f4f1f9;
+    --na: #ece9f0;
+    --shadow: 0 2px 10px rgba(80, 60, 120, 0.08);
+    --chip-bg: #ede6fb;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --bg: #1a1720;
+      --card-bg: #241f2d;
+      --text: #f1eefa;
+      --text-dim: #b3aac2;
+      --border: #3a3346;
+      --accent: #a78bfa;
+      --accent-dark: #c4b5fd;
+      --accent-soft: #322a45;
+      --free: #1f4a35;
+      --free-text: #7ee2ab;
+      --busy: #2c2636;
+      --na: #221e2a;
+      --shadow: 0 2px 14px rgba(0,0,0,0.4);
+      --chip-bg: #362c4d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1720;
+    --card-bg: #241f2d;
+    --text: #f1eefa;
+    --text-dim: #b3aac2;
+    --border: #3a3346;
+    --accent: #a78bfa;
+    --accent-dark: #c4b5fd;
+    --accent-soft: #322a45;
+    --free: #1f4a35;
+    --free-text: #7ee2ab;
+    --busy: #2c2636;
+    --na: #221e2a;
+    --shadow: 0 2px 14px rgba(0,0,0,0.4);
+    --chip-bg: #362c4d;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+    padding: 20px 14px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 {
+    font-size: 1.5rem;
+    margin: 4px 0 4px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    margin-bottom: 22px;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-size: 1.02rem;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Custom dropdown for teacher selection */
+  .dropdown { position: relative; }
+  .dropdown-btn {
+    width: 100%;
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--busy);
+    color: var(--text);
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .dropdown-btn:hover { border-color: var(--accent); }
+  .dropdown-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 10px;
+    z-index: 20;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .dropdown-panel.open { display: block; }
+  .panel-actions {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-actions button {
+    flex: 1;
+    padding: 7px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .panel-actions button:hover { background: var(--chip-bg); }
+  .teacher-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .teacher-option:hover { background: var(--accent-soft); }
+  .teacher-option input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip {
+    background: var(--chip-bg);
+    color: var(--accent-dark);
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .chip.empty { color: var(--text-dim); background: transparent; border: 1px dashed var(--border); font-weight: 400; }
+
+  select.filter-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--busy);
+    color: var(--text);
+    font-size: 0.95rem;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-dim) 50%), linear-gradient(135deg, var(--text-dim) 50%, transparent 50%);
+    background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .result-summary {
+    font-size: 0.92rem;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+  .result-summary b { color: var(--text); }
+
+  .day-block {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--accent-soft);
+  }
+  .day-block .day-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: var(--accent-dark);
+  }
+  .slot-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .slot {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .slot.consec {
+    border-color: var(--accent);
+    background: var(--free);
+    color: var(--free-text);
+    font-weight: 700;
+  }
+  .badge {
+    font-size: 0.72rem;
+    background: var(--accent);
+    color: white;
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+  .empty-msg {
+    text-align: center;
+    padding: 30px 10px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  .warn {
+    background: #fff4e0;
+    color: #8a5a00;
+    border: 1px solid #f0dca0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
+  :root[data-theme="dark"] .warn, @media (prefers-color-scheme: dark) { }
+  .warn.dark-safe {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    border: 1px solid var(--border);
+  }
+
+  /* Timetables */
+  .tt-section h2 { font-size: 1.15rem; margin-bottom: 4px; }
+  .tt-section .subtitle { margin-bottom: 16px; }
+  .tt-grid { display: flex; flex-direction: column; gap: 16px; }
+  .tt-table-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .tt-table-wrap h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: var(--accent-dark);
+  }
+  .tt-scroll { overflow-x: auto; }
+  table.tt {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 480px;
+    font-size: 0.82rem;
+  }
+  table.tt th, table.tt td {
+    border: 1px solid var(--border);
+    padding: 7px 5px;
+    text-align: center;
+  }
+  table.tt th {
+    background: var(--accent-soft);
+    color: var(--text);
+    font-weight: 700;
+  }
+  table.tt td.period-label {
+    background: var(--accent-soft);
+    font-weight: 700;
+    width: 44px;
+  }
+  table.tt td.free { background: var(--free); color: var(--free-text); font-weight: 600; }
+  table.tt td.na { background: var(--na); color: var(--text-dim); font-style: italic; font-size: 0.78rem; }
+  table.tt td.busy { background: var(--busy); color: var(--text); }
+  table.tt td.busy-who {
+    background: var(--busy);
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+  table.tt td.consec-cell { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  footer { text-align: center; color: var(--text-dim); font-size: 0.78rem; margin-top: 30px; }
+
+  table.tt td.clickable { cursor: pointer; transition: transform 0.08s; }
+  table.tt td.clickable:hover { filter: brightness(1.08); }
+  table.tt td.clickable:active { transform: scale(0.96); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 15, 30, 0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .modal-box h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .modal-box .modal-sub { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 14px; }
+  .modal-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+  }
+  .modal-row.free { background: var(--free); color: var(--free-text); font-weight: 600; }
+  .modal-row.busy { background: var(--busy); color: var(--text); }
+  .modal-row .tag { font-size: 0.78rem; opacity: 0.85; font-weight: 400; }
+  .modal-close {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📅 선생님 공강 비교기</h1>
+  <div class="subtitle">선생님을 선택하고, 원하는 연속 공강 조건을 고르면 겹치는 공강 시간을 바로 보여드려요.</div>
+
+  <div class="card">
+    <h2><span class="step-num">1</span>선생님 선택 (2명 이상)</h2>
+    <div class="dropdown">
+      <button class="dropdown-btn" id="dropdownBtn" type="button">
+        <span id="dropdownLabel">선생님을 선택하세요</span>
+        <span>▾</span>
+      </button>
+      <div class="dropdown-panel" id="dropdownPanel">
+        <div class="panel-actions">
+          <button type="button" id="selectAllBtn">전체 선택</button>
+          <button type="button" id="clearBtn">초기화</button>
+        </div>
+        <div id="teacherOptions"></div>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">2</span>연속 공강 조건</h2>
+    <select class="filter-select" id="consecFilter">
+      <option value="1">전체 보기 (연속 아니어도 OK)</option>
+      <option value="2">2교시 이상 연속</option>
+      <option value="3">3교시 이상 연속</option>
+      <option value="4">4교시 이상 연속</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h2><span class="step-num">3</span>결과</h2>
+    <div id="resultArea"></div>
+  </div>
+
+  <div class="card tt-common-card" id="commonTimetableCard" style="display:none;">
+    <h2>🗓️ 선택한 선생님 공통 시간표</h2>
+    <div class="subtitle" style="margin-bottom:12px;">연두색이 선택한 선생님 전원이 공강인 시간이에요. 다른 색 칸에는 누가 수업 중인지 표시했어요. 칸을 누르면 전체 8명 중 그 시간에 공강인 사람도 확인할 수 있어요.</div>
+    <div class="tt-scroll" id="commonTimetableWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎮 2인 이상 연속 공강 모아보기</h2>
+    <div class="subtitle" style="margin-bottom:14px;">선택과 상관없이, 2명 이상이 겹치는 연속 공강 조합을 전부 모았어요.</div>
+    <h3 style="font-size:0.95rem; margin:0 0 8px; color:var(--accent-dark);">🟩 2교시 연속</h3>
+    <div id="list2consec" style="margin-bottom:18px;"></div>
+    <h3 style="font-size:0.95rem; margin:0 0 8px; color:var(--accent-dark);">🟦 3교시 이상 연속</h3>
+    <div id="list3consec"></div>
+  </div>
+
+  <div class="tt-section">
+    <h2>📋 전체 시간표</h2>
+    <div class="subtitle">참고용으로 아래 각 선생님의 전체 시간표를 확인할 수 있어요. (연두색 = 공강, 월요일·금요일 7교시는 학교에 아예 없는 시간이라 회색 "없음"으로 표시했어요. 2026학년도 2학기 전체 강의실 시간표 기준)</div>
+    <div class="tt-grid" id="ttGrid"></div>
+  </div>
+
+  <footer>선생님이 준 시간표 이미지를 바탕으로 만든 비교 도구예요.</footer>
+</div>
+
+<div class="modal-overlay" id="cellModal">
+  <div class="modal-box">
+    <h3 id="modalTitle">월요일 1교시</h3>
+    <div class="modal-sub" id="modalSub">이 시간에 누가 공강인지 확인해보세요</div>
+    <div class="modal-list" id="modalList"></div>
+    <button class="modal-close" id="modalCloseBtn">닫기</button>
+  </div>
+</div>
+
+<script>
+const DAYS = ["월","화","수","목","금"];
+const PERIODS = [1,2,3,4,5,6,7];
+
+// null = 공강, "NA" = 시간표에 없는 교시(월요일·금요일 7교시는 아예 존재하지 않음), 문자열 = 수업중
+const DATA = {
+  "장인형": {
+    "월": {1:null,2:"여지",3:"미래사회",4:"여지",5:null,6:null,7:"NA"},
+    "화": {1:"여지",2:null,3:null,4:null,5:null,6:null,7:"미래사회"},
+    "수": {1:null,2:"여지",3:null,4:null,5:null,6:null,7:null},
+    "목": {1:null,2:"여지",3:"미래사회",4:null,5:null,6:"여지",7:"여지"},
+    "금": {1:null,2:"여지",3:null,4:null,5:"창체",6:"창체",7:"NA"}
+  },
+  "김수경": {
+    "월": {1:null,2:"생윤",3:"공캠",4:null,5:null,6:null,7:"NA"},
+    "화": {1:"생윤",2:"생윤",3:null,4:null,5:null,6:null,7:"공캠"},
+    "수": {1:null,2:"생윤",3:null,4:null,5:null,6:null,7:null},
+    "목": {1:null,2:null,3:"공캠",4:null,5:null,6:null,7:null},
+    "금": {1:null,2:"생윤",3:null,4:"생윤",5:"창체",6:"창체",7:"NA"}
+  },
+  "황정은": {
+    "월": {1:null,2:"사문탐",3:"사문탐",4:null,5:null,6:"사문탐",7:"NA"},
+    "화": {1:"사문탐",2:"사문탐",3:null,4:"사문탐",5:null,6:null,7:"사문탐"},
+    "수": {1:null,2:"사문탐",3:null,4:null,5:"사문탐",6:null,7:null},
+    "목": {1:"사문탐",2:null,3:"사문탐",4:null,5:null,6:"사문탐",7:"사문탐"},
+    "금": {1:null,2:"사문탐",3:null,4:"사문탐",5:"창체",6:"창체",7:"NA"}
+  },
+  "이철희": {
+    "월": {1:"미적분",2:null,3:null,4:null,5:"미적분",6:null,7:"NA"},
+    "화": {1:null,2:"기하",3:"미적분",4:null,5:"미적분",6:"미적분",7:null},
+    "수": {1:"미적분",2:null,3:"미적분",4:"미적분",5:null,6:null,7:null},
+    "목": {1:"기하",2:"미적분",3:null,4:"미적분",5:null,6:"기하",7:null},
+    "금": {1:"미적분",2:null,3:"미적분",4:null,5:"창체",6:"창체",7:"NA"}
+  },
+  "김연경": {
+    "월": {1:null,2:null,3:"과학D",4:null,5:null,6:"지구",7:"NA"},
+    "화": {1:null,2:"과학D",3:null,4:"지구",5:null,6:"과학D",7:"과학D"},
+    "수": {1:"지2",2:null,3:null,4:"과학D",5:null,6:null,7:"과학D"},
+    "목": {1:"지구",2:null,3:"과학D",4:"지2",5:null,6:null,7:null},
+    "금": {1:"과학D",2:null,3:"과학D",4:null,5:"창체",6:"창체",7:"NA"}
+  },
+  "김수연": {
+    "월": {1:"환경",2:"동아리",3:null,4:"물2",5:"(자율)",6:"역학",7:"NA"},
+    "화": {1:null,2:"역학",3:null,4:"역학",5:null,6:null,7:null},
+    "수": {1:null,2:null,3:"환경",4:null,5:"역학",6:null,7:null},
+    "목": {1:"역학",2:"물2",3:null,4:null,5:null,6:null,7:null},
+    "금": {1:null,2:null,3:null,4:"역학",5:"창체",6:"창체",7:"NA"}
+  },
+  "반소연": {
+    "월": {1:null,2:"음악",3:"음감비",4:null,5:"음악",6:null,7:"NA"},
+    "화": {1:null,2:null,3:"음악",4:"음악",5:null,6:null,7:"음감비"},
+    "수": {1:null,2:"음악",3:null,4:"음악",5:null,6:null,7:null},
+    "목": {1:"음악",2:null,3:"음감비",4:null,5:"음악",6:null,7:null},
+    "금": {1:"음악",2:"음악",3:null,4:null,5:"창체",6:"창체",7:"NA"}
+  },
+  "송숙영": {
+    "월": {1:null,2:null,3:"체육",4:null,5:"체육",6:null,7:"NA"},
+    "화": {1:"체육",2:null,3:"체육",4:"체육",5:null,6:null,7:null},
+    "수": {1:null,2:null,3:"체육",4:null,5:null,6:"체육",7:null},
+    "목": {1:"체육",2:"체육",3:null,4:null,5:null,6:null,7:null},
+    "금": {1:null,2:null,3:"체육",4:null,5:"창체",6:"창체",7:"NA"}
+  }
+};
+
+const TEACHER_NAMES = Object.keys(DATA);
+let selected = new Set();
+
+function isFree(teacher, day, period) {
+  const v = DATA[teacher][day][period];
+  return v === null;
+}
+function isNA(teacher, day, period) {
+  return DATA[teacher][day][period] === "NA";
+}
+
+// ---------- Dropdown for teacher selection ----------
+const dropdownBtn = document.getElementById('dropdownBtn');
+const dropdownPanel = document.getElementById('dropdownPanel');
+const teacherOptionsEl = document.getElementById('teacherOptions');
+const dropdownLabel = document.getElementById('dropdownLabel');
+const chipsEl = document.getElementById('chips');
+
+TEACHER_NAMES.forEach(name => {
+  const label = document.createElement('label');
+  label.className = 'teacher-option';
+  label.innerHTML = `<input type="checkbox" value="${name}"> ${name} 선생님`;
+  teacherOptionsEl.appendChild(label);
+  label.querySelector('input').addEventListener('change', (e) => {
+    if (e.target.checked) selected.add(name);
+    else selected.delete(name);
+    refreshUI();
+  });
+});
+
+dropdownBtn.addEventListener('click', () => {
+  dropdownPanel.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown')) dropdownPanel.classList.remove('open');
+});
+
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  selected = new Set(TEACHER_NAMES);
+  teacherOptionsEl.querySelectorAll('input').forEach(cb => cb.checked = true);
+  refreshUI();
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  selected.clear();
+  teacherOptionsEl.querySelectorAll('input').forEach(cb => cb.checked = false);
+  refreshUI();
+});
+
+document.getElementById('consecFilter').addEventListener('change', refreshUI);
+
+function refreshUI() {
+  dropdownLabel.textContent = selected.size > 0 ? `${selected.size}명 선택됨` : "선생님을 선택하세요";
+  chipsEl.innerHTML = '';
+  if (selected.size === 0) {
+    const c = document.createElement('span');
+    c.className = 'chip empty';
+    c.textContent = '아직 선택된 선생님이 없어요';
+    chipsEl.appendChild(c);
+  } else {
+    [...selected].forEach(name => {
+      const c = document.createElement('span');
+      c.className = 'chip';
+      c.textContent = name;
+      chipsEl.appendChild(c);
+    });
+  }
+  renderResults();
+  renderCommonTimetable();
+}
+
+// ---------- Result computation ----------
+function computeCommonFree(teachers) {
+  const result = {}; // day -> [periods]
+  DAYS.forEach(day => {
+    const periods = [];
+    PERIODS.forEach(p => {
+      // 금요일 7교시는 시간표에 존재하지 않으므로 항상 제외
+      if (isNA(teachers[0], day, p)) return;
+      const allFree = teachers.every(t => isFree(t, day, p));
+      if (allFree) periods.push(p);
+    });
+    result[day] = periods;
+  });
+  return result;
+}
+
+function findRuns(periods) {
+  const sorted = [...periods].sort((a,b)=>a-b);
+  const runs = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j+1] === sorted[j] + 1) j++;
+    runs.push({ start: sorted[i], end: sorted[j], length: j - i + 1 });
+    i = j + 1;
+  }
+  return runs;
+}
+
+function renderResults() {
+  const area = document.getElementById('resultArea');
+  area.innerHTML = '';
+
+  if (selected.size < 2) {
+    area.innerHTML = `<div class="warn dark-safe">선생님을 2명 이상 선택해주세요.</div>`;
+    return;
+  }
+
+  const teachers = [...selected];
+  const minConsec = parseInt(document.getElementById('consecFilter').value, 10);
+  const commonFree = computeCommonFree(teachers);
+
+  const summary = document.createElement('div');
+  summary.className = 'result-summary';
+  summary.innerHTML = `<b>${teachers.join(', ')}</b> (${teachers.length}명) 기준으로 찾은 결과예요.`;
+  area.appendChild(summary);
+
+  let anyMatch = false;
+
+  DAYS.forEach(day => {
+    const periods = commonFree[day];
+    if (periods.length === 0) return;
+    const runs = findRuns(periods);
+    const filteredRuns = minConsec === 1 ? runs : runs.filter(r => r.length >= minConsec);
+    if (filteredRuns.length === 0) return;
+
+    anyMatch = true;
+    const block = document.createElement('div');
+    block.className = 'day-block';
+    const dayName = document.createElement('div');
+    dayName.className = 'day-name';
+    dayName.textContent = `${day}요일`;
+    block.appendChild(dayName);
+
+    const slotList = document.createElement('div');
+    slotList.className = 'slot-list';
+    filteredRuns.forEach(r => {
+      const slot = document.createElement('div');
+      const isConsec = r.length >= 2;
+      slot.className = 'slot' + (isConsec ? ' consec' : '');
+      const rangeText = r.length === 1 ? `${r.start}교시` : `${r.start}~${r.end}교시`;
+      slot.innerHTML = `${rangeText}` + (isConsec ? ` <span class="badge">${r.length}연속</span>` : '');
+      slotList.appendChild(slot);
+    });
+    block.appendChild(slotList);
+    area.appendChild(block);
+  });
+
+  if (!anyMatch) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = minConsec === 1
+      ? '조건에 맞는 공통 공강 시간이 없어요.'
+      : `조건에 맞는 ${minConsec}교시 이상 연속 공강 시간이 없어요.`;
+    area.appendChild(msg);
+  }
+}
+
+// ---------- Common timetable for selected teachers ----------
+function renderCommonTimetable() {
+  const card = document.getElementById('commonTimetableCard');
+  const wrap = document.getElementById('commonTimetableWrap');
+  wrap.innerHTML = '';
+
+  if (selected.size < 2) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const teachers = [...selected];
+  const minConsec = parseInt(document.getElementById('consecFilter').value, 10);
+  const commonFree = computeCommonFree(teachers);
+
+  // build run info per day for highlighting consecutive matches
+  const consecCells = {}; // "day-period" -> true if part of a run meeting the filter
+  DAYS.forEach(day => {
+    const runs = findRuns(commonFree[day]);
+    const filtered = minConsec === 1 ? runs.filter(r => r.length >= 2) : runs.filter(r => r.length >= minConsec);
+    filtered.forEach(r => {
+      for (let p = r.start; p <= r.end; p++) consecCells[`${day}-${p}`] = true;
+    });
+  });
+
+  const table = document.createElement('table');
+  table.className = 'tt';
+
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  headRow.innerHTML = `<th>교시</th>` + DAYS.map(d => `<th>${d}</th>`).join('');
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  PERIODS.forEach(p => {
+    const tr = document.createElement('tr');
+    let rowHtml = `<td class="period-label">${p}</td>`;
+    DAYS.forEach(day => {
+      if (isNA(teachers[0], day, p)) {
+        rowHtml += `<td class="na">없음</td>`;
+        return;
+      }
+      const busyTeachers = teachers.filter(t => !isFree(t, day, p));
+      if (busyTeachers.length === 0) {
+        const isConsec = consecCells[`${day}-${p}`];
+        rowHtml += `<td class="free clickable${isConsec ? ' consec-cell' : ''}" data-day="${day}" data-period="${p}">공강${isConsec ? ' ✦' : ''}</td>`;
+      } else {
+        rowHtml += `<td class="busy-who clickable" data-day="${day}" data-period="${p}">${busyTeachers.join(', ')}<br>수업</td>`;
+      }
+    });
+    tr.innerHTML = rowHtml;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+
+  wrap.querySelectorAll('td.clickable').forEach(td => {
+    td.addEventListener('click', () => {
+      showCellModal(td.dataset.day, parseInt(td.dataset.period, 10));
+    });
+  });
+}
+
+// ---------- 2인 이상 연속 공강 모아보기 (전체 조합 스캔) ----------
+function getAllMaximalRuns() {
+  const runsList = [];
+  DAYS.forEach(day => {
+    const periods = PERIODS.filter(p => !isNA(TEACHER_NAMES[0], day, p));
+    const freeSets = {};
+    periods.forEach(p => {
+      freeSets[p] = new Set(TEACHER_NAMES.filter(t => isFree(t, day, p)));
+    });
+    for (let i = 0; i < periods.length; i++) {
+      for (let j = i; j < periods.length; j++) {
+        let team = new Set(freeSets[periods[i]]);
+        for (let k = i + 1; k <= j; k++) {
+          team = new Set([...team].filter(t => freeSets[periods[k]].has(t)));
+          if (team.size === 0) break;
+        }
+        const length = j - i + 1;
+        if (length < 2 || team.size < 2) continue;
+
+        let extendableLeft = false, extendableRight = false;
+        if (i > 0) {
+          const leftP = periods[i - 1];
+          extendableLeft = [...team].every(t => freeSets[leftP].has(t));
+        }
+        if (j < periods.length - 1) {
+          const rightP = periods[j + 1];
+          extendableRight = [...team].every(t => freeSets[rightP].has(t));
+        }
+        if (!extendableLeft && !extendableRight) {
+          runsList.push({ day, start: periods[i], end: periods[j], length, team: [...team].sort() });
+        }
+      }
+    }
+  });
+  const dayOrder = { "월":0, "화":1, "수":2, "목":3, "금":4 };
+  runsList.sort((a,b) => (dayOrder[a.day]-dayOrder[b.day]) || (a.start-b.start) || (b.team.length-a.team.length));
+  return runsList;
+}
+
+function renderConsecutiveGroups() {
+  const runs = getAllMaximalRuns();
+  const list2 = runs.filter(r => r.length === 2);
+  const list3 = runs.filter(r => r.length >= 3);
+
+  function renderList(containerId, arr) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    if (arr.length === 0) {
+      el.innerHTML = `<div class="empty-msg" style="padding:14px 0;">해당하는 조합이 없어요.</div>`;
+      return;
+    }
+    arr.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'day-block';
+      row.style.marginBottom = '8px';
+      const rangeText = `${r.day}요일 ${r.start}~${r.end}교시`;
+      row.innerHTML = `
+        <div class="day-name">${rangeText} <span class="badge">${r.length}연속 · ${r.team.length}명</span></div>
+        <div class="slot-list"><div class="slot consec">${r.team.join(', ')}</div></div>
+      `;
+      el.appendChild(row);
+    });
+  }
+
+  renderList('list2consec', list2);
+  renderList('list3consec', list3);
+}
+
+// ---------- Full timetables ----------
+function renderTimetables() {
+  const grid = document.getElementById('ttGrid');
+  TEACHER_NAMES.forEach(name => {
+    const wrap = document.createElement('div');
+    wrap.className = 'tt-table-wrap';
+    const h3 = document.createElement('h3');
+    h3.textContent = `${name} 선생님`;
+    wrap.appendChild(h3);
+
+    const scrollWrap = document.createElement('div');
+    scrollWrap.className = 'tt-scroll';
+    const table = document.createElement('table');
+    table.className = 'tt';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    headRow.innerHTML = `<th>교시</th>` + DAYS.map(d => `<th>${d}</th>`).join('');
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    PERIODS.forEach(p => {
+      const tr = document.createElement('tr');
+      let rowHtml = `<td class="period-label">${p}</td>`;
+      DAYS.forEach(day => {
+        const v = DATA[name][day][p];
+        if (v === "NA") rowHtml += `<td class="na">없음</td>`;
+        else if (v === null) rowHtml += `<td class="free clickable" data-day="${day}" data-period="${p}">공강</td>`;
+        else rowHtml += `<td class="busy clickable" data-day="${day}" data-period="${p}">${v}</td>`;
+      });
+      tr.innerHTML = rowHtml;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    scrollWrap.appendChild(table);
+    wrap.appendChild(scrollWrap);
+    grid.appendChild(wrap);
+  });
+
+  // 클릭 이벤트: 모든 개별 시간표 칸에 걸어주기 (NA 칸 제외)
+  grid.querySelectorAll('td.clickable').forEach(td => {
+    td.addEventListener('click', () => {
+      showCellModal(td.dataset.day, parseInt(td.dataset.period, 10));
+    });
+  });
+}
+
+// ---------- Cell click modal ----------
+function showCellModal(day, period) {
+  const modal = document.getElementById('cellModal');
+  const title = document.getElementById('modalTitle');
+  const sub = document.getElementById('modalSub');
+  const list = document.getElementById('modalList');
+
+  title.textContent = `${day}요일 ${period}교시`;
+
+  if (isNA(TEACHER_NAMES[0], day, period)) {
+    sub.textContent = '이 교시는 시간표에 없는 시간이에요.';
+    list.innerHTML = '';
+    modal.classList.add('open');
+    return;
+  }
+
+  const freeTeachers = TEACHER_NAMES.filter(t => isFree(t, day, period));
+  const busyTeachers = TEACHER_NAMES.filter(t => !isFree(t, day, period));
+
+  sub.textContent = `공강 ${freeTeachers.length}명 / 수업 중 ${busyTeachers.length}명`;
+  list.innerHTML = '';
+
+  freeTeachers.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'modal-row free';
+    row.innerHTML = `<span>${t}</span><span class="tag">공강</span>`;
+    list.appendChild(row);
+  });
+  busyTeachers.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'modal-row busy';
+    row.innerHTML = `<span>${t}</span><span class="tag">${DATA[t][day][period]}</span>`;
+    list.appendChild(row);
+  });
+
+  modal.classList.add('open');
+}
+
+document.getElementById('modalCloseBtn').addEventListener('click', () => {
+  document.getElementById('cellModal').classList.remove('open');
+});
+document.getElementById('cellModal').addEventListener('click', (e) => {
+  if (e.target.id === 'cellModal') e.target.classList.remove('open');
+});
+
+renderTimetables();
+renderConsecutiveGroups();
+refreshUI();
+</script>
+</body>
+</html>
