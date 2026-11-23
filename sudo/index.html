@@ -42,6 +42,7 @@ h1{margin:2px 0 4px;font-family:var(--display);font-weight:700;font-size:clamp(3
 .notice h2{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--accent)}
 .notice .text{white-space:pre-wrap;overflow-wrap:anywhere}
 .notice .text a{color:var(--accent)}
+.notice .text b.hl{font-weight:700;color:var(--ink);background:var(--warn-soft);padding:1px 4px;border-radius:3px}
 .notice textarea{width:100%;min-height:110px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:8px 10px;resize:vertical}
 .notice .acts{display:flex;gap:8px;flex-wrap:wrap}
 
@@ -428,7 +429,7 @@ function state(s,n,cap,fixed){
   return['','모집 중 · 최소 '+(MIN_PLAYERS-n)+'명 더'];
 }
 
-function linkify(t){return esc(t).replace(/https?:\/\/[^\s<]+/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`)}
+function linkify(t){return esc(t).replace(/https?:\/\/[^\s<]+/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`).replace(/\*\*(.+?)\*\*/g,'<b class="hl">$1</b>')}
 
 function renderNotice(){
   const box=$('#notice');
@@ -548,7 +549,7 @@ $('#notice').addEventListener('click',async e=>{
   const box=$('#notice');
   if(e.target.id==='nEdit'){
     editingNotice=true;
-    box.innerHTML=`<h2>공지 수정</h2><textarea id="nText" maxlength="2000" aria-label="공지 내용" placeholder="예: 장소는 3층 지리실! 끝나고 바로 퇴근 가능해요">${esc(notice)}</textarea><div class="acts"><button class="btn small" type="button" id="nSave">저장</button><button class="btn small ghost" type="button" id="nCancel">취소</button></div>`;
+    box.innerHTML=`<h2>공지 수정</h2><textarea id="nText" maxlength="2000" aria-label="공지 내용" placeholder="예: 장소는 3층 지리실! (**굵게** 처럼 별표 두 개로 감싸면 강조돼요)">${esc(notice)}</textarea><div class="acts"><button class="btn small" type="button" id="nSave">저장</button><button class="btn small ghost" type="button" id="nCancel">취소</button></div>`;
     $('#nText').focus();
   }
   if(e.target.id==='nCancel'){editingNotice=false;renderNotice()}
