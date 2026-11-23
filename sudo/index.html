@@ -354,7 +354,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTi
 const K_NAME='sudo-mumi-name', K_PW='sudo-mumi-pw';
 
 /* 수도여고 모집판 Apps Script 웹앱 주소 — 배포 후 여기에 넣으면 GitHub 페이지에서도 열려요 */
-const API_URL='';
+const API_URL='https://script.google.com/macros/s/AKfycby3JaCjrcp_G-sdqXBhvJMavxB1kLKFqlpjsGgjtO_JHbumAg-p6TMAnoPmM4b7iIJQkA/exec';
 const inGas=typeof google!=='undefined'&&google.script&&google.script.run;
 function call(fn,...args){
   if(inGas)return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
