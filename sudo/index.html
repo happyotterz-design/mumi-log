@@ -182,6 +182,11 @@ body.has-bar .toast{bottom:150px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 @media (prefers-reduced-motion:no-preference){.slot{transition:border-color .15s}.slot:hover{border-color:var(--muted)}}
 
+.log.big{align-items:flex-start;gap:3px;padding:12px 18px;border:2px solid var(--accent);background:var(--accent-soft);border-radius:10px;min-width:210px}
+.log.big strong{font-family:var(--display);font-size:22px;line-height:1.15}
+.log.big span{font-size:14px;font-weight:600;color:var(--ink)}
+.log.big em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--paper);background:var(--accent);border-radius:999px;padding:2px 10px;margin-top:3px}
+.log.big:hover{background:var(--paper)}
 .wdays{display:flex;flex-wrap:wrap;gap:6px}
 .wdays label{cursor:pointer}
 .wdays input{position:absolute;opacity:0;pointer-events:none}
@@ -213,7 +218,7 @@ ol.names .tag.bk{border-style:dashed}
       <h1>수도여고 방과후 머미</h1>
       <p class="sub">선생님들, 되는 날에 이름 넣어주세요. 월·금은 7교시부터, 화·수·목은 방과후에 해요. 게임은 모인 멤버를 보고 정할게요. 4명이 모이면 진행할 수 있어요.</p>
     </div>
-    <a class="log" href="https://happyotterz-design.github.io/mumi-log/" target="_blank" rel="noopener">머미 로그<span>작품 후기 보기 ↗</span></a>
+    <a class="log big" href="https://happyotterz-design.github.io/mumi-log/" target="_blank" rel="noopener"><strong>머미 로그 ↗</strong><span>작품 후기 보기 · 후기 쓰기</span><em>대여 가능! 연락 주세요</em></a>
   </header>
 
   <section class="notice" id="notice" hidden></section>
