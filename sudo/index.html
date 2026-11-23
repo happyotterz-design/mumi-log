@@ -208,6 +208,9 @@ body.has-bar .toast{bottom:150px}
  .day.none{display:none}
  .weeks ol.names .racts{margin-left:auto;flex-basis:auto;padding-left:0}
 }
+.dnote{font-size:13px;line-height:1.45;background:var(--warn-soft);color:var(--ink);border-left:3px solid var(--warn);border-radius:4px;padding:5px 8px;overflow-wrap:anywhere}
+.dnote b{color:var(--warn);font-size:11.5px;margin-right:6px}
+.multibar .bulk input[type=text]{border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 8px;flex:1 1 140px;min-width:0}
 .wdays{display:flex;flex-wrap:wrap;gap:6px}
 .wdays label{cursor:pointer}
 .wdays input{position:absolute;opacity:0;pointer-events:none}
@@ -299,7 +302,7 @@ ol.names .tag.bk{border-style:dashed}
         </div>
       </div>
     </div>
-    <p class="ownertip">인원은 처음엔 ‘미정’으로 열려요. 멤버 보고 게임을 정하면 카드의 ‘날짜 설정’에서 게임·인원을 넣고 상태를 ‘확정’으로 바꿔주세요. 여러 날짜를 한꺼번에 바꾸거나 <b>지우려면</b> 카드의 ‘선택’을 체크하고 화면 아래 <b>방장 일괄 변경</b>을 쓰세요.</p>
+    <p class="ownertip">날짜마다 짧은 공지(예: 시험기간이라 학발협 끝나고 가능)는 카드의 ‘날짜 설정 → 날짜 공지’에 쓰세요. 여러 날짜에 같은 공지는 아래 일괄 변경으로. 인원은 처음엔 ‘미정’으로 열려요. 멤버 보고 게임을 정하면 카드의 ‘날짜 설정’에서 게임·인원을 넣고 상태를 ‘확정’으로 바꿔주세요. 여러 날짜를 한꺼번에 바꾸거나 <b>지우려면</b> 카드의 ‘선택’을 체크하고 화면 아래 <b>방장 일괄 변경</b>을 쓰세요.</p>
   </section>
 
   <div class="bar">
@@ -345,6 +348,7 @@ ol.names .tag.bk{border-style:dashed}
       <span class="lbl">~</span>
       <input id="bkEnd" type="time" aria-label="끝 시간 바꾸기" title="비워두면 그대로">
       <input type="text" id="bkGame" maxlength="40" placeholder="게임 (비우면 그대로)" aria-label="게임 바꾸기">
+      <input type="text" id="bkNote" maxlength="60" placeholder="날짜 공지 (비우면 그대로, - 는 지우기)" aria-label="날짜 공지 바꾸기">
       <select id="bkStatus" aria-label="상태 바꾸기">
         <option value="keep">상태 그대로</option>
         <option>모집 중</option><option>확정</option><option>취소</option>
@@ -520,7 +524,7 @@ function card(s){
         <span>시간</span><div class="row"><input type="time" id="es-${k}" data-d value="${esc(s.start)}" aria-label="시작"> ~ <input type="time" id="ee-${k}" data-d value="${esc(s.end)}" aria-label="끝"></div>
         <span>게임</span><input type="text" id="eg-${k}" data-d maxlength="40" value="${esc(s.game)}" placeholder="비워두면 ‘멤버 보고 정해요’">
         <span>인원</span><select id="ec-${k}" data-d>${CAP_OPTIONS.map(c=>`<option value="${c}"${(c||null)===(s.cap||null)?' selected':''}>${capLabel(c)}</option>`).join('')}</select>
-        <span>메모</span><input type="text" id="en-${k}" data-d maxlength="60" value="${esc(s.note)}" placeholder="장소 (예: 3층 지리실)">
+        <span>날짜 공지</span><input type="text" id="en-${k}" data-d maxlength="60" value="${esc(s.note)}" placeholder="예: 시험기간이라 학발협 끝나고 가능">
         <span>상태</span><select id="et-${k}" data-d>${['모집 중','확정','취소'].map(v=>`<option${s.status===v?' selected':''}>${v}</option>`).join('')}</select>
       </div>
       <div class="acts"><button class="btn small" type="button" data-act="save" data-k="${k}">저장</button><button class="btn small danger" type="button" data-act="del" data-k="${k}">${armedDelete.has(k)?'정말 삭제 (이름도 같이 지워져요)':'날짜 삭제'}</button></div>
@@ -532,8 +536,8 @@ function card(s){
     <div class="date ${cls}"><span class="md">${pad(d.getMonth()+1)}.${pad(d.getDate())}</span><span class="dow">${DOW[dw]}</span><span class="wk">${wk}</span></div>
     <div class="body">
       <div class="meta"><span class="time">${esc(s.start)}–${esc(s.end)}</span><span class="capchip${fixed?' fixed':''}">${fixed?cap+'인 게임':'인원 미정'}</span><span class="pill ${pc}">${pt}</span>${pick}</div>
+      ${s.note?`<div class="dnote"><b>공지</b>${esc(s.note)}</div>`:''}
       ${s.game?`<div class="game">${esc(s.game)}</div>`:'<div class="game tbd">게임 미정 · 모인 멤버 보고 정해요</div>'}
-      ${s.note?`<div class="note">${esc(s.note)}</div>`:''}
       <div class="seats"><div class="dots" aria-hidden="true">${dots}</div><span class="count">${countTxt}</span></div>
       ${names}${join}${edit}
     </div></article>`;
@@ -650,13 +654,14 @@ $('#bkGo').addEventListener('click',async e=>{
   if($('#bkStart').value)patch.start=$('#bkStart').value;
   if($('#bkEnd').value)patch.end=$('#bkEnd').value;
   if($('#bkGame').value.trim())patch.game=$('#bkGame').value.trim();
+  {const v=$('#bkNote').value.trim();if(v)patch.note=v==='-'?'':v;}
   if($('#bkStatus').value!=='keep')patch.status=$('#bkStatus').value;
   if(!Object.keys(patch).length){toast('바꿀 항목을 하나 이상 골라주세요');return}
   const b=e.target;b.disabled=true;
   try{
     const n=selected.size;
     const data=await call('bulkUpdate',pw,[...selected],patch);
-    ['bkStart','bkEnd','bkGame'].forEach(id=>$('#'+id).value='');$('#bkCap').value='keep';$('#bkStatus').value='keep';
+    ['bkStart','bkEnd','bkGame','bkNote'].forEach(id=>$('#'+id).value='');$('#bkCap').value='keep';$('#bkStatus').value='keep';
     selected.clear();bkArmed=false;apply(data);render(true);toast(n+'개 바꿨어요');
   }catch(err){toast(errMsg(err))}
   finally{b.disabled=false}

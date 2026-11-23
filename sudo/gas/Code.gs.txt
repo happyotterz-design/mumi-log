@@ -1,0 +1,302 @@
+/**
+ * 수도여고 방과후 머미 모집판 — Google Apps Script 웹앱
+ * (친구들용 「머미 모집판」과 완전히 별개인 새 스크립트·새 시트에서 쓰세요)
+ *
+ * 시트 3개를 씁니다 (처음 열 때 자동으로 만들어져요)
+ *   날짜 : 열린 날짜(타임)별 시간·게임·정원·메모·상태·ID
+ *   참여 : 누가 어느 타임에 언제 들어왔는지 + 구분(참여 / 예비)
+ *   설정 : 공지 / 방장비밀번호  ← 비밀번호는 여기서 바꾸세요 (기본 1234)
+ *
+ * 구분
+ *   참여 : 그날 갈게요 (선착순, 정원이 차면 대기)
+ *   예비 : 날짜 확정 전이라 애매하지만, 날짜가 잡히면 예비로 걸어둘게요 (인원 수에는 안 셈)
+ * 날짜 상태: 모집 중 / 확정 / 취소
+ */
+
+// 비워두면 이 스크립트가 붙어 있는 스프레드시트를 사용해요.
+// 독립 스크립트로 만들었다면 시트 주소의 /d/ 와 /edit 사이 ID를 넣어주세요.
+const SPREADSHEET_ID = '';
+
+const SHEET = { slots: '날짜', signups: '참여', conf: '설정' };
+const SLOT_HEAD = ['날짜', '시작', '끝', '게임', '정원', '메모', '상태', 'ID'];
+const SIGN_HEAD = ['ID', '타임ID', '이름', '구분', '메모', '신청시각'];
+const STATUS = ['모집 중', '확정', '취소'];
+const MIN_CAP = 4, MAX_CAP = 9;
+
+/* ───────── 웹앱 진입점 ───────── */
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('수도여고 방과후 머미')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// GitHub 페이지에서 fetch(POST)로 부를 때
+const API = {
+  getData, join, joinMany, leave, leaveMany, updateSignup,
+  saveSlot, deleteSlot, deleteSlots, bulkUpdate, openDates, saveNotice, checkAdmin
+};
+function doPost(e) {
+  let out;
+  try {
+    const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const fn = API[req.fn];
+    if (!fn) throw new Error('알 수 없는 요청이에요.');
+    out = { ok: true, data: fn.apply(null, req.args || []) };
+  } catch (err) {
+    out = { ok: false, error: String(err && err.message || err).replace(/^Exception:\s*/, '') };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ───────── 시트 도우미 ───────── */
+
+function ss_() {
+  return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+}
+function sheet_(name, head) {
+  const ss = ss_();
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold');
+    sh.getRange(1, 1, 1000, head.length).setNumberFormat('@'); // 날짜·시간이 자동 변환되지 않게 글자로
+    sh.setFrozenRows(1);
+    if (name === SHEET.conf) {
+      sh.getRange(2, 1, 2, 2).setValues([['공지', ''], ['방장비밀번호', '1234']]);
+    }
+  }
+  return sh;
+}
+function rows_(name, head) {
+  const sh = sheet_(name, head);
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return [];
+  return sh.getRange(2, 1, n, head.length).getValues().map((r, i) => ({ r: r, row: i + 2 }));
+}
+function str_(v, kind) {
+  if (v instanceof Date) {
+    const tz = Session.getScriptTimeZone();
+    return Utilities.formatDate(v, tz, kind === 'time' ? 'HH:mm' : kind === 'at' ? "yyyy-MM-dd'T'HH:mm:ss.SSS" : 'yyyy-MM-dd');
+  }
+  return String(v == null ? '' : v).trim();
+}
+function capOf_(v) {
+  const n = parseInt(v, 10);
+  return n >= MIN_CAP && n <= MAX_CAP ? n : null;
+}
+function conf_(key) {
+  const r = rows_(SHEET.conf, ['항목', '값']).find(x => String(x.r[0]).trim() === key);
+  return r ? String(r.r[1]) : '';
+}
+function setConf_(key, val) {
+  const sh = sheet_(SHEET.conf, ['항목', '값']);
+  const r = rows_(SHEET.conf, ['항목', '값']).find(x => String(x.r[0]).trim() === key);
+  if (r) sh.getRange(r.row, 2).setValue(val);
+  else sh.appendRow([key, val]);
+}
+function admin_(pw) {
+  const real = conf_('방장비밀번호') || '1234';
+  if (String(pw || '') !== real) throw new Error('방장 비밀번호가 맞지 않아요.');
+}
+function lock_(fn) {
+  const l = LockService.getScriptLock();
+  l.waitLock(20000);
+  try { return fn(); } finally { l.releaseLock(); }
+}
+function nowAt_() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss.SSS");
+}
+function cleanName_(name) {
+  const n = String(name || '').trim().slice(0, 20);
+  if (!n) throw new Error('이름을 적어주세요.');
+  return n;
+}
+
+function slotList_() {
+  return rows_(SHEET.slots, SLOT_HEAD).filter(x => str_(x.r[0])).map(x => ({
+    row: x.row,
+    date: str_(x.r[0]),
+    start: str_(x.r[1], 'time'),
+    end: str_(x.r[2], 'time'),
+    game: str_(x.r[3]),
+    cap: capOf_(x.r[4]),
+    note: str_(x.r[5]),
+    status: STATUS.indexOf(str_(x.r[6])) >= 0 ? str_(x.r[6]) : '모집 중',
+    id: str_(x.r[7]) || str_(x.r[0])
+  }));
+}
+function signList_() {
+  return rows_(SHEET.signups, SIGN_HEAD).filter(x => str_(x.r[0])).map(x => ({
+    row: x.row,
+    id: str_(x.r[0]),
+    slot: str_(x.r[1]),
+    name: str_(x.r[2]),
+    backup: str_(x.r[3]) === '예비',
+    note: str_(x.r[4]),
+    at: str_(x.r[5], 'at')
+  }));
+}
+function deleteRows_(name, head, rowNums) {
+  const sh = sheet_(name, head);
+  rowNums.sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+}
+
+/* ───────── 읽기 ───────── */
+
+function getData() {
+  return { slots: slotList_(), signups: signList_(), notice: conf_('공지') };
+}
+function checkAdmin(pw) { admin_(pw); return true; }
+
+/* ───────── 참여 ───────── */
+
+function addSignup_(slots, signs, slotId, name, backup, note) {
+  const s = slots.find(x => x.id === slotId);
+  if (!s) return 'gone';
+  if (s.status === '취소') return 'cancelled';
+  if (signs.some(x => x.slot === slotId && x.name === name)) return 'dup';
+  const row = [Utilities.getUuid().slice(0, 8), slotId, name, backup ? '예비' : '참여', String(note || '').slice(0, 30), nowAt_()];
+  sheet_(SHEET.signups, SIGN_HEAD).appendRow(row);
+  signs.push({ slot: slotId, name: name });
+  return 'ok';
+}
+
+function join(slotId, name, backup, note) {
+  return lock_(() => {
+    const n = cleanName_(name);
+    const res = addSignup_(slotList_(), signList_(), slotId, n, !!backup, note);
+    if (res === 'gone') throw new Error('없어진 날짜예요. 새로고침 해주세요.');
+    if (res === 'cancelled') throw new Error('취소된 날짜예요.');
+    if (res === 'dup') throw new Error(n + ' 이름이 이미 들어가 있어요. 참여↔예비는 이름 옆 버튼으로 바꿀 수 있어요.');
+    return getData();
+  });
+}
+
+function joinMany(ids, name, backup, note) {
+  return lock_(() => {
+    const n = cleanName_(name);
+    const slots = slotList_(), signs = signList_(), added = [], skipped = [];
+    (ids || []).forEach(id => {
+      (addSignup_(slots, signs, id, n, !!backup, note) === 'ok' ? added : skipped).push(id);
+    });
+    const d = getData(); d.added = added; d.skipped = skipped;
+    return d;
+  });
+}
+
+function leave(signupId, name, pw) {
+  return lock_(() => {
+    const x = signList_().find(s => s.id === signupId);
+    if (!x) return getData();
+    let owner = false;
+    try { admin_(pw); owner = true; } catch (e) {}
+    if (!owner && x.name !== String(name || '').trim()) {
+      throw new Error('위 ‘내 이름’이 ' + x.name + '일 때만 뺄 수 있어요. (방장은 누구나 뺄 수 있어요)');
+    }
+    deleteRows_(SHEET.signups, SIGN_HEAD, [x.row]);
+    return getData();
+  });
+}
+
+function leaveMany(ids, name) {
+  return lock_(() => {
+    const n = String(name || '').trim(), set = {};
+    (ids || []).forEach(id => set[id] = 1);
+    const rows = signList_().filter(x => set[x.slot] && x.name === n).map(x => x.row);
+    deleteRows_(SHEET.signups, SIGN_HEAD, rows);
+    const d = getData(); d.removed = rows.length;
+    return d;
+  });
+}
+
+// 순서(신청시각)는 그대로 두고 구분·메모만 바꿈
+function updateSignup(signupId, patch) {
+  return lock_(() => {
+    const x = signList_().find(s => s.id === signupId);
+    if (!x) throw new Error('없어진 이름이에요. 새로고침 해주세요.');
+    const sh = sheet_(SHEET.signups, SIGN_HEAD);
+    if (patch && 'backup' in patch) sh.getRange(x.row, 4).setValue(patch.backup ? '예비' : '참여');
+    if (patch && 'note' in patch) sh.getRange(x.row, 5).setValue(String(patch.note || '').slice(0, 30));
+    return getData();
+  });
+}
+
+/* ───────── 방장 ───────── */
+
+function saveNotice(pw, text) {
+  admin_(pw);
+  setConf_('공지', String(text || '').slice(0, 2000));
+  return getData();
+}
+
+// items: [{date:'2026-11-27', start:'15:30', end:'18:30'}, ...]
+function openDates(pw, items, cap, status) {
+  admin_(pw);
+  return lock_(() => {
+    const slots = slotList_(), sh = sheet_(SHEET.slots, SLOT_HEAD);
+    const st = STATUS.indexOf(status) >= 0 ? status : '모집 중';
+    let added = 0;
+    (items || []).forEach(it => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(it.date)) return;
+      if (slots.some(s => s.date === it.date && s.start === it.start)) return;
+      const used = slots.some(s => s.id === it.date);
+      const id = used ? it.date + '-' + String(it.start).replace(':', '') : it.date;
+      sh.appendRow([it.date, it.start, it.end, '', capOf_(cap) || '', '', st, id]);
+      slots.push({ date: it.date, start: it.start, id: id });
+      added++;
+    });
+    const d = getData(); d.added = added;
+    return d;
+  });
+}
+
+function saveSlot(pw, o) {
+  admin_(pw);
+  return lock_(() => {
+    const s = slotList_().find(x => x.id === o.id);
+    if (!s) throw new Error('없어진 날짜예요. 새로고침 해주세요.');
+    const sh = sheet_(SHEET.slots, SLOT_HEAD);
+    sh.getRange(s.row, 2, 1, 6).setValues([[
+      o.start || s.start, o.end || s.end, String(o.game || '').slice(0, 40),
+      capOf_(o.cap) || '', String(o.note || '').slice(0, 60),
+      STATUS.indexOf(o.status) >= 0 ? o.status : s.status
+    ]]);
+    return getData();
+  });
+}
+
+function bulkUpdate(pw, ids, patch) {
+  admin_(pw);
+  return lock_(() => {
+    const set = {}; (ids || []).forEach(id => set[id] = 1);
+    const sh = sheet_(SHEET.slots, SLOT_HEAD);
+    slotList_().filter(s => set[s.id]).forEach(s => {
+      if ('start' in patch) sh.getRange(s.row, 2).setValue(patch.start);
+      if ('end' in patch) sh.getRange(s.row, 3).setValue(patch.end);
+      if ('game' in patch) sh.getRange(s.row, 4).setValue(String(patch.game).slice(0, 40));
+      if ('note' in patch) sh.getRange(s.row, 6).setValue(String(patch.note).slice(0, 60));
+      if ('cap' in patch) sh.getRange(s.row, 5).setValue(capOf_(patch.cap) || '');
+      if ('status' in patch && STATUS.indexOf(patch.status) >= 0) sh.getRange(s.row, 7).setValue(patch.status);
+    });
+    return getData();
+  });
+}
+
+function deleteSlots_(ids) {
+  const set = {}; (ids || []).forEach(id => set[id] = 1);
+  const slotRows = slotList_().filter(s => set[s.id]).map(s => s.row);
+  const signRows = signList_().filter(x => set[x.slot]).map(x => x.row);
+  deleteRows_(SHEET.signups, SIGN_HEAD, signRows);
+  deleteRows_(SHEET.slots, SLOT_HEAD, slotRows);
+  return slotRows.length;
+}
+function deleteSlot(pw, id) {
+  admin_(pw);
+  return lock_(() => { deleteSlots_([id]); return getData(); });
+}
+function deleteSlots(pw, ids) {
+  admin_(pw);
+  return lock_(() => { const n = deleteSlots_(ids); const d = getData(); d.removed = n; return d; });
+}
