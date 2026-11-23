@@ -26,7 +26,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
-.wrap{max-width:1040px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:flex;flex-direction:column;gap:20px}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:flex;flex-direction:column;gap:20px}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
@@ -154,7 +154,7 @@ details.edit .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .guide .fake{display:inline-flex;gap:5px;align-items:center;font-size:13px;font-weight:600;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:0 9px 0 6px;background:var(--paper);vertical-align:1px;white-space:nowrap}
 .guide .fake i{width:12px;height:12px;border:1.5px solid var(--accent);border-radius:3px;display:inline-block}
 .multibar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:2px solid var(--accent);box-shadow:0 -6px 18px rgba(0,0,0,.08);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
-.multibar .in{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.multibar .in{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .multibar .sum{font-weight:600;overflow-wrap:anywhere}
 .multibar .sum small{font-weight:400;color:var(--muted);font-family:var(--mono);font-size:12px}
 .multibar .ctl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
@@ -187,6 +187,27 @@ body.has-bar .toast{bottom:150px}
 .log.big span{font-size:14px;font-weight:600;color:var(--ink)}
 .log.big em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--paper);background:var(--accent);border-radius:999px;padding:2px 10px;margin-top:3px}
 .log.big:hover{background:var(--paper)}
+.weeks{display:flex;flex-direction:column;gap:14px}
+.mhead{margin:8px 0 0;font-family:var(--display);font-size:24px;font-weight:700}
+.week{display:flex;flex-direction:column;gap:8px}
+.whead{margin:0;font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--muted);letter-spacing:.06em;border-bottom:1px solid var(--line);padding-bottom:4px}
+.wgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:start}
+.day{display:flex;flex-direction:column;gap:10px;min-width:0}
+.day.none{border:1px dashed var(--line);border-radius:8px;padding:14px 10px;color:var(--muted);font-size:12.5px;text-align:center;gap:2px}
+.day.none span{font-family:var(--mono);font-size:13px;color:var(--ink);opacity:.6}
+.weeks .slot{grid-template-columns:1fr}
+.weeks .date{flex-direction:row;justify-content:flex-start;align-items:baseline;gap:8px;border-right:none;border-bottom:1px solid var(--line);padding:8px 12px}
+.weeks .date .md{font-size:16px}.weeks .date .dow{font-size:19px}
+.weeks .body{padding:10px 12px}
+.weeks .meta{gap:5px 6px}
+.weeks .pick{margin-left:0}
+.weeks ol.names .racts{margin-left:0;flex-basis:100%;padding-left:calc(1.8em + 8px)}
+.weeks .join input[type=text]{flex-basis:100%}
+@media (max-width:860px){
+ .wgrid{grid-template-columns:1fr}
+ .day.none{display:none}
+ .weeks ol.names .racts{margin-left:auto;flex-basis:auto;padding-left:0}
+}
 .wdays{display:flex;flex-wrap:wrap;gap:6px}
 .wdays label{cursor:pointer}
 .wdays input{position:absolute;opacity:0;pointer-events:none}
@@ -283,12 +304,12 @@ ol.names .tag.bk{border-style:dashed}
 
   <div class="bar">
     <div class="left">
-      <nav class="months" id="months" aria-label="달 선택"></nav>
+      <p class="legend">월~금 한 주씩 보여요. 위에서부터 가까운 주예요.</p>
     </div>
     <label class="toggle"><input type="checkbox" id="showPast"> 지난 날짜도 보기</label>
   </div>
 
-  <main class="list" id="list">
+  <main class="weeks" id="list">
     <div class="blank">날짜 불러오는 중…</div>
   </main>
 
@@ -437,13 +458,28 @@ function render(force){
   if(!loaded)return;
   const t=today();
   const vis=[...slots].sort(cmp).filter(s=>showPast||s.date>=t);
-  const months=[...new Set(vis.map(s=>s.date.slice(0,7)))];
-  if(!month||!months.includes(month))month=months[0]||null;
-  $('#months').innerHTML=months.length>1?months.map(m=>{const[y,mm]=m.split('-');return`<button type="button" data-m="${m}" aria-pressed="${m===month}">${+mm}월${y!==t.slice(0,4)?` <small>${y}</small>`:''}</button>`}).join(''):'';
-  const items=months.length>1?vis.filter(s=>s.date.slice(0,7)===month):vis;
+  const items=vis;
   const list=$('#list');
   if(!items.length){list.innerHTML=`<div class="blank">${isOwner?'아직 열린 날짜가 없어요. 위에서 기간을 골라 날짜를 열어주세요.':'아직 열린 날짜가 없어요. 날짜가 열리면 여기에 보여요.'}</div>`;return}
-  list.innerHTML=items.map(card).join('');
+  // 월요일 기준으로 주 묶기
+  const mon=ds=>{const d=parse(ds),w=d.getDay();d.setDate(d.getDate()-((w+6)%7));return ymd(d)};
+  const weeks=new Map();
+  for(const s of items){const m=mon(s.date);if(!weeks.has(m))weeks.set(m,[]);weeks.get(m).push(s)}
+  let html='',lastMonth='';
+  for(const [m,arr] of weeks){
+    const d0=parse(m),d4=new Date(d0);d4.setDate(d4.getDate()+4);
+    const mm=d0.getFullYear()+'-'+(d4.getMonth()+1);
+    if(mm!==lastMonth){html+=`<h2 class="mhead">${d4.getMonth()+1}월</h2>`;lastMonth=mm}
+    const cols=[];
+    for(let i=0;i<5;i++){
+      const d=new Date(d0);d.setDate(d.getDate()+i);const ds=ymd(d);
+      const here=arr.filter(s=>s.date===ds);
+      cols.push(here.length?`<div class="day">${here.map(card).join('')}</div>`:`<div class="day none"><span>${d.getMonth()+1}/${d.getDate()} ${DOW[d.getDay()]}</span>열린 시간 없음</div>`);
+    }
+    const wkend=arr.filter(s=>{const w=parse(s.date).getDay();return w===0||w===6});
+    html+=`<section class="week"><h3 class="whead">${d0.getMonth()+1}/${d0.getDate()} – ${d4.getMonth()+1}/${d4.getDate()}</h3><div class="wgrid">${cols.join('')}</div>${wkend.length?`<div class="wgrid wkend">${wkend.map(s=>`<div class="day">${card(s)}</div>`).join('')}</div>`:''}</section>`;
+  }
+  list.innerHTML=html;
   for(const [id,v] of Object.entries(drafts)){const el=document.getElementById(id);if(el){if(el.type==='checkbox'||el.type==='radio')el.checked=v;else el.value=v}}
 }
 
@@ -520,7 +556,6 @@ $('#notice').addEventListener('click',async e=>{
 });
 
 /* 날짜 카드 */
-$('#months').addEventListener('click',e=>{const b=e.target.closest('button[data-m]');if(b){month=b.dataset.m;render(true)}});
 $('#showPast').addEventListener('change',e=>{showPast=e.target.checked;render(true)});
 const list=$('#list');
 const keep=e=>{const el=e.target;if(el.dataset&&el.dataset.d!==undefined){if(el.type==='radio'){const o=el.id.startsWith('ki-')?'kb-'+el.id.slice(3):'ki-'+el.id.slice(3);drafts[el.id]=el.checked;drafts[o]=!el.checked}else drafts[el.id]=el.type==='checkbox'?el.checked:el.value}};
