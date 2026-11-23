@@ -266,7 +266,7 @@ ol.names .tag.bk{border-style:dashed}
         <span class="steptitle">시간 (요일별로 자동으로 들어가요)</span>
         <div class="timegrid">
           <b>월·금</b><input id="tMF1" type="time" value="15:30" aria-label="월·금 시작"><span class="lbl">~</span><input id="tMF2" type="time" value="18:00" aria-label="월·금 끝">
-          <b>화·수·목</b><input id="tTT1" type="time" value="16:30" aria-label="화수목 시작"><span class="lbl">~</span><input id="tTT2" type="time" value="18:30" aria-label="화수목 끝">
+          <b>화·수·목</b><input id="tTT1" type="time" value="16:20" aria-label="화수목 시작"><span class="lbl">~</span><input id="tTT2" type="time" value="18:30" aria-label="화수목 끝">
         </div>
       </div>
     </div>
@@ -414,7 +414,7 @@ function bySlot(id){const all=signups.filter(x=>x.slot===id).sort(ord);return{go
 const cmp=(a,b)=>a.date!==b.date?(a.date<b.date?-1:1):(a.start<b.start?-1:a.start>b.start?1:0);
 const sameDay=s=>slots.filter(x=>x.date===s.date&&x.status!=='취소').length>1;
 function slotLabel(s){const d=parse(s.date);return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})${sameDay(s)?' '+s.start:''}`}
-const timesFor=d=>{const w=parse(d).getDay();return (w===1||w===5)?[$('#tMF1').value||'15:30',$('#tMF2').value||'18:00']:[$('#tTT1').value||'16:30',$('#tTT2').value||'18:30']};
+const timesFor=d=>{const w=parse(d).getDay();return (w===1||w===5)?[$('#tMF1').value||'15:30',$('#tMF2').value||'18:00']:[$('#tTT1').value||'16:20',$('#tTT2').value||'18:30']};
 
 function state(s,n,cap,fixed){
   if(s.status==='취소')return['off','취소됨'];
